@@ -532,7 +532,7 @@ let G = {
   gameElapsedS:0, gameTotalS:3600, pulseS:600, zoneRotS:900, inZoneS:0, activeZoneIdx:0,
   outsideS:0, isOutside:false,
   graceRemaining:300, graceActive:true,
-  gpsLat:null, gpsLng:null,
+  gpsLat:null, gpsLng:null, gameStarted:false,
   teams:[
     {name:'Team Rood', color:0, players:[{name:'Daan',number:'11234',kills:2,alive:true,lives:1},{name:'Emma',number:'12345',kills:0,alive:true,lives:1},{name:'Sander',number:'13456',kills:1,alive:true,lives:1,hasShield:true}]},
     {name:'Team Blauw',color:1, players:[{name:'Lisa',number:'21234',kills:3,alive:true,lives:1},{name:'Tom',number:'22345',kills:1,alive:true,lives:1},{name:'Noor',number:'23456',kills:2,alive:false,lives:0}]},
@@ -559,7 +559,10 @@ function go(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  if (id==='s-game') setTimeout(()=>{ if(!map) initMap(); else map.invalidateSize(); }, 250);
+  if (id==='s-game') {
+    setTimeout(()=>{ if(!map) initMap(); else map.invalidateSize(); }, 300);
+    setTimeout(()=>{ if(map) map.invalidateSize(); }, 800);
+  }
   if (id==='s-admin') renderAdmin();
   if (id==='s-rules') renderRulesPU();
   if (id==='s-number') renderNumberCard();
@@ -756,21 +759,17 @@ function createLobby() {
   function finishLobby(lat, lng) {
     CENTER = {lat, lng};
     G.gpsLat=lat; G.gpsLng=lng;
-    const sampleNames = ['Lisa','Tom','Emma','Sander','Noor','Bas','Mira','Rick','Fien','Jens','Bo','Lars'];
+    // Only the host — no fake bots. Joiners are added via Firebase.
     if (CFG.mode==='teams') {
       G.teams = CFG.teamNames.slice(0,CFG.numTeams).map((nm,i) => ({
-        name:nm, color:i%4,
-        players: Array.from({length:CFG.teamSize}, (_,j) => ({
-          name: j===0&&i===0 ? n : sampleNames[(i*CFG.teamSize+j-1)%sampleNames.length],
-          number: generatePlayerNumber(i*CFG.teamSize+j),
-          kills:0, alive:true, lives:CFG.lives
-        }))
+        name:nm, color:i%4, players:[]
       }));
+      // Add host to first team
+      G.teams[0].players.push({name:n, number:G.playerNumber, kills:0, alive:true, lives:CFG.lives, isHost:true});
       G.myTeam=0;
     } else {
       G.teams = [{name:'FFA', color:0, players:[
-        {name:n, number:G.playerNumber, kills:0, alive:true, lives:CFG.lives},
-        ...sampleNames.slice(0,6).map((nm,i) => ({name:nm, number:generatePlayerNumber(i+1), kills:0, alive:true, lives:CFG.lives}))
+        {name:n, number:G.playerNumber, kills:0, alive:true, lives:CFG.lives, isHost:true}
       ]}];
     }
     document.getElementById('lc-display').textContent=G.lobby;
@@ -797,10 +796,14 @@ function createLobby() {
 function joinLobby() {
   const n=document.getElementById('jn').value.trim(), c=document.getElementById('jc').value.trim().toUpperCase();
   if (!n||!c) { toast('Vul naam en code in'); return; }
-  G.name=n; G.lobby=c; G.playerNumber=generatePlayerNumber(Math.floor(Math.random()*50)+10);
+  G.name=n; G.lobby=c;
+  G.playerNumber = String(10000+Math.floor(Math.random()*89999));
   document.getElementById('lc-display').textContent=c;
-  if (!DEMO_MODE && db) listenToFirebase(c);
-  else { renderLobbyView(); renderLobbySettings(); }
+  if (!DEMO_MODE && db) {
+    joinLobbyFirebase(c, n);
+  } else {
+    renderLobbyView(); renderLobbySettings();
+  }
   go('s-lobby'); toast('Gejoined!','green');
 }
 
@@ -850,13 +853,15 @@ function startGame() {
   const gta = document.getElementById('g-teams-alive');
   if (gta) gta.textContent = CFG.mode==='teams' ? G.teams.filter(t=>t.players.some(p=>p.alive)).length : '—';
   document.getElementById('g-alive').textContent = allPlayers().filter(p=>p.alive).length;
-  renderPU(); startTimers(); go('s-number');
+  renderPU(); startTimers();
+  if (!DEMO_MODE && db && G.isHost) syncGameStartToFirebase();
+  go('s-number');
 }
 
 // ═══════════════════════════════════════════════════════════
 // MAP
 // ═══════════════════════════════════════════════════════════
-let map=null, myMarker=null, otherMarkers=[], puCircle=null, puMarker=null, zoneCircle=null, deadOverlay=null, redBorderCircle=null;
+let map=null, myMarker=null, otherMarkers=[], puCircles=[], puMarkers=[], zoneCircle=null, deadOverlay=null, redBorderCircle=null;
 let watchId=null;
 
 function initMap() {
@@ -870,12 +875,28 @@ function initMap() {
   const myIcon = L.divIcon({html:'<div style="width:14px;height:14px;background:#e8f44a;border-radius:50%;border:2px solid #0a0a0f"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   myMarker = L.marker([CENTER.lat,CENTER.lng],{icon:myIcon}).addTo(map).bindPopup('Jij ('+G.name+')');
 
-  // Red overlay outside zone (large circle)
-  deadOverlay = L.circle([CENTER.lat,CENTER.lng],{radius:MAX_RADIUS*30,color:'transparent',fillColor:'#e8281e',fillOpacity:.22,interactive:false}).addTo(map);
-  // Clear fill inside zone to mask the red overlay
-  zoneCircle = L.circle([CENTER.lat,CENTER.lng],{radius:MAX_RADIUS,color:'transparent',fillColor:'#0a0a0f',fillOpacity:.01,interactive:false}).addTo(map);
-  // Red border ring
-  redBorderCircle = L.circle([CENTER.lat,CENTER.lng],{radius:MAX_RADIUS,color:'#e8281e',fill:false,weight:4,interactive:false}).addTo(map);
+  // Draw red zone using SVG mask: large rectangle minus the play circle = only outside is red
+  function drawZoneMask(r) {
+    if (deadOverlay) deadOverlay.remove();
+    const lat=CENTER.lat, lng=CENTER.lng;
+    const latPerMeter=1/111320, lngPerMeter=1/(111320*Math.cos(lat*Math.PI/180));
+    // Build a GeoJSON polygon: big outer box with inner circle hole
+    const boxDeg=5; // large box in degrees
+    const steps=64;
+    const hole=[];
+    for(let i=0;i<=steps;i++){
+      const a=(i/steps)*2*Math.PI;
+      hole.push([lng+Math.cos(a)*r*lngPerMeter, lat+Math.sin(a)*r*latPerMeter]);
+    }
+    const outerBox=[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]];
+    deadOverlay = L.geoJSON({type:'Feature',geometry:{type:'Polygon',coordinates:[outerBox,hole]}},{
+      style:{fillColor:'#e8281e',fillOpacity:.25,color:'transparent',weight:0,interactive:false}
+    }).addTo(map);
+    if (redBorderCircle) redBorderCircle.remove();
+    redBorderCircle = L.circle([lat,lng],{radius:r,color:'#e8281e',fill:false,weight:4,interactive:false}).addTo(map);
+  }
+  drawZoneMask(MAX_RADIUS);
+  zoneCircle = {_currentR: MAX_RADIUS, _drawZoneMask: drawZoneMask};
 
   // Center marker
   L.circle([CENTER.lat,CENTER.lng],{radius:8,color:'#e8f44a',fillColor:'#e8f44a',fillOpacity:.5,weight:2,interactive:false}).addTo(map);
@@ -902,8 +923,8 @@ function updateZoneSize() {
   const progress = G.gameElapsedS/G.gameTotalS;
   const minR = MAX_RADIUS*(CFG.shrinkPct/100);
   const currentR = MAX_RADIUS-(MAX_RADIUS-minR)*progress;
-  zoneCircle.setRadius(currentR);
-  if (redBorderCircle) redBorderCircle.setRadius(currentR);
+  zoneCircle._currentR = currentR;
+  zoneCircle._drawZoneMask(currentR);
   const pct = Math.round((currentR/MAX_RADIUS)*100);
   const el = document.getElementById('zone-pct'); if(el) el.textContent=pct+'%';
   const fill = document.getElementById('zone-shrink-fill'); if(fill) fill.style.width=pct+'%';
@@ -927,31 +948,36 @@ function getPUZonePositions() {
 
 function renderPUZones() {
   if (!map) return;
-  if (puCircle) puCircle.remove(); if (puMarker) puMarker.remove();
+  // Remove old zone markers
+  puCircles.forEach(c=>c.remove()); puCircles=[];
+  puMarkers.forEach(m=>m.remove()); puMarkers=[];
   const zones = getPUZonePositions();
-  const z = zones[G.activeZoneIdx % zones.length];
-  const enabledKeys = getEnabledPUs().filter(k=>k!=='revive');
-  const puKey = enabledKeys.length ? enabledKeys[G.activeZoneIdx%enabledKeys.length] : 'shield';
-  const pw = ALL_POWERUPS[puKey];
+  const enabledKeys = getEnabledPUs().filter(k=>'revive'!==k);
+  if (!enabledKeys.length) return;
   const zoneRadius = Math.max(30, MAX_RADIUS*0.08);
-  puCircle = L.circle([z.lat,z.lng],{radius:zoneRadius,color:'#4af4a0',fillColor:'#4af4a0',fillOpacity:.15,weight:2,dashArray:'4 3',interactive:false}).addTo(map);
-  const icon = L.divIcon({html:`<div style="background:#13131a;border:1.5px solid #4af4a0;border-radius:8px;padding:3px 7px;font-size:11px;color:#4af4a0;font-family:'DM Sans',sans-serif;white-space:nowrap">${pw.icon} ${pw.name}</div>`,className:'',iconAnchor:[35,12]});
-  puMarker = L.marker([z.lat,z.lng],{icon}).addTo(map);
+  // Show TWO zones simultaneously: activeZoneIdx and activeZoneIdx+1
+  [0,1].forEach(offset => {
+    const zoneIdx = (G.activeZoneIdx + offset) % zones.length;
+    const z = zones[zoneIdx];
+    const puKey = enabledKeys[zoneIdx % enabledKeys.length];
+    const pw = ALL_POWERUPS[puKey];
+    const color = offset===0 ? '#4af4a0' : '#f4c430'; // green for primary, gold for secondary
+    const circ = L.circle([z.lat,z.lng],{radius:zoneRadius,color,fillColor:color,fillOpacity:.15,weight:2,dashArray:'4 3',interactive:false}).addTo(map);
+    const icon = L.divIcon({html:`<div style="background:#13131a;border:1.5px solid ${color};border-radius:8px;padding:3px 7px;font-size:11px;color:${color};font-family:'DM Sans',sans-serif;white-space:nowrap">${pw.icon} ${pw.name}</div>`,className:'',iconAnchor:[35,12]});
+    const marker = L.marker([z.lat,z.lng],{icon}).addTo(map);
+    puCircles.push(circ); puMarkers.push(marker);
+  });
 }
 
 function spawnOtherPlayers() {
+  // Player markers start hidden. They only appear during pulse (showPulse).
+  // In real play, GPS positions come from Firebase; for now markers are placed at CENTER and hidden.
   otherMarkers.forEach(m=>m.remove()); otherMarkers=[];
-  const latPerMeter = 1/111320;
-  const lngPerMeter = 1/(111320*Math.cos(CENTER.lat*Math.PI/180));
-  const r = MAX_RADIUS * 0.4;
-  const angleOffsets = [[45,0.8],[120,0.6],[200,0.7],[280,0.5],[330,0.75],[160,0.65]];
-  allPlayers().filter(p=>p.name!==G.name).slice(0,6).forEach((p,i) => {
+  if (!map) return;
+  allPlayers().filter(p=>p.number!==G.playerNumber&&p.alive).forEach(p => {
     const tc = CFG.mode==='teams' ? TEAM_COLORS[G.teams[p.teamIdx]?.color||0].dot : '#f44a7a';
     const icon = L.divIcon({html:`<div style="width:10px;height:10px;background:${tc};border-radius:50%;border:2px solid #0a0a0f;opacity:0;transition:opacity .3s"></div>`,iconSize:[10,10],iconAnchor:[5,5],className:''});
-    const [deg, frac] = angleOffsets[i]||[0,0.5];
-    const rad = deg*Math.PI/180;
-    const dist = r*frac;
-    otherMarkers.push(L.marker([CENTER.lat+Math.sin(rad)*dist*latPerMeter, CENTER.lng+Math.cos(rad)*dist*lngPerMeter],{icon}).addTo(map));
+    otherMarkers.push(L.marker([CENTER.lat,CENTER.lng],{icon,title:p.name}).addTo(map));
   });
 }
 
@@ -1043,7 +1069,21 @@ function startTimers() {
   },1000);
   tPulse = setInterval(()=>{G.pulseS--;if(G.pulseS<=0){triggerPulse();G.pulseS=CFG.pulseIntervalMin*60;}const el=document.getElementById('pulse-cd');if(el)el.textContent=Math.floor(G.pulseS/60)+':'+String(G.pulseS%60).padStart(2,'0');},1000);
   tZoneRot = setInterval(()=>{G.zoneRotS--;if(G.zoneRotS<=0){rotateZone();G.zoneRotS=CFG.zoneRotMin*60;}const el=document.getElementById('zone-rot-cd');if(el)el.textContent=Math.floor(G.zoneRotS/60)+':'+String(G.zoneRotS%60).padStart(2,'0');},1000);
-  tZoneIn = setInterval(()=>{G.inZoneS++;const need=CFG.zoneTimeMin*60,rem=need-G.inZoneS;const el=document.getElementById('zone-cd');if(el)el.textContent=Math.floor(rem/60)+':'+String(Math.max(0,rem%60)).padStart(2,'0');if(G.inZoneS>=need){awardPowerup();G.inZoneS=0;}},1000);
+  tZoneIn = setInterval(()=>{
+    const inZone = isPlayerInPUZone();
+    if (inZone) {
+      G.inZoneS++;
+      const need=CFG.zoneTimeMin*60, rem=need-G.inZoneS;
+      const el=document.getElementById('zone-cd');
+      if(el) el.textContent=Math.floor(rem/60)+':'+String(Math.max(0,rem%60)).padStart(2,'0');
+      if(G.inZoneS>=need){awardPowerup();G.inZoneS=0;}
+    } else {
+      // Not in zone — reset counter and show dash
+      if(G.inZoneS>0) G.inZoneS=Math.max(0,G.inZoneS-1);
+      const el=document.getElementById('zone-cd');
+      if(el&&G.inZoneS===0) el.textContent='—';
+    }
+  },1000);
   tOutside = setInterval(()=>{
     if (!G.alive) return;
     const warn = document.getElementById('outside-warn');
@@ -1060,7 +1100,20 @@ function startTimers() {
 }
 
 function triggerPulse(){playSound('pulse');toast('⚡ PULSE — iedereen 10s zichtbaar!');addLog('Pulse getriggerd');showPulse();}
-function rotateZone(){G.activeZoneIdx=(G.activeZoneIdx+1)%5;playSound('zone');const enabledKeys=getEnabledPUs().filter(k=>k!=='revive');const puKey=enabledKeys.length?enabledKeys[G.activeZoneIdx%enabledKeys.length]:'shield';toast('Zone → '+ALL_POWERUPS[puKey].icon+' '+ALL_POWERUPS[puKey].name,'green');addLog('Zone geroteerd');if(map)renderPUZones();}
+function rotateZone(){G.activeZoneIdx=(G.activeZoneIdx+1)%5;playSound('zone');const enabledKeys=getEnabledPUs().filter(k=>k!=='revive');const puKey=enabledKeys.length?enabledKeys[G.activeZoneIdx%enabledKeys.length]:'shield';const pw2=ALL_POWERUPS[enabledKeys[(G.activeZoneIdx+1)%enabledKeys.length]||'shield'];toast('Zone → '+ALL_POWERUPS[puKey].icon+' '+ALL_POWERUPS[puKey].name+' & '+pw2.icon+' '+pw2.name,'green');addLog('Zones geroteerd');if(map)renderPUZones();}
+function isPlayerInPUZone() {
+  if (!map || G.gpsLat===null) return false;
+  const zones = getPUZonePositions();
+  const zoneRadius = Math.max(30, MAX_RADIUS*0.08);
+  // Check both active zones
+  for (let offset=0; offset<2; offset++) {
+    const z = zones[(G.activeZoneIdx+offset)%zones.length];
+    const dist = map.distance([G.gpsLat,G.gpsLng],[z.lat,z.lng]);
+    if (dist <= zoneRadius) return true;
+  }
+  return false;
+}
+
 function awardPowerup(){const empty=G.powerups.indexOf(null);if(empty===-1){toast('Power-up slots vol!');return;}const enabledKeys=getEnabledPUs();if(!enabledKeys.length)return;const pw=enabledKeys[G.activeZoneIdx%enabledKeys.length];G.powerups[empty]=pw;playSound('powerup');toast(ALL_POWERUPS[pw].icon+' '+ALL_POWERUPS[pw].name+' verdiend!','green');addLog('Power-up verdiend: '+ALL_POWERUPS[pw].name);renderPU();}function takeHit(reason){G.lives--;renderHearts(document.getElementById('g-hearts'),G.lives,G.maxLives);if(G.lives<=0){G.alive=false;playSound('eliminated');toast('Je bent geëlimineerd ('+reason+')!','red');addLog(G.name+' geëlimineerd: '+reason);document.getElementById('elim-kills').textContent=G.kills;setTimeout(()=>go('s-elim'),1500);}else{playSound('kill');toast('❤️ -1 leven ('+reason+') — '+G.lives+' over','red');addLog(G.name+' verloor leven: '+reason);}}
 function updAlive(){const alive=allPlayers().filter(p=>p.alive).length;document.getElementById('g-alive').textContent=alive;const ta=document.getElementById('g-teams-alive');if(ta&&CFG.mode==='teams')ta.textContent=G.teams.filter(t=>t.players.some(p=>p.alive)).length;}
 
@@ -1110,34 +1163,123 @@ function adminEndGame(){addLog('Spel beëindigd');toast('Spel beëindigd!','red'
 function addLog(msg){const t=new Date();G.adminLog.push(`[${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}] ${msg}`);}
 
 // ═══════════════════════════════════════════════════════════
-// FIREBASE SYNC (stubs — worden actief na configuratie)
+// FIREBASE SYNC — volledig werkend
 // ═══════════════════════════════════════════════════════════
 function syncLobbyToFirebase() {
   if (!db) return;
   lobbyRef = db.ref('lobbies/'+G.lobby);
-  lobbyRef.set({ cfg:CFG, teams:G.teams, started:false, ts:Date.now() });
+  const lobbyData = {
+    cfg: CFG,
+    center: CENTER,
+    radius: MAX_RADIUS,
+    teams: G.teams,
+    started: false,
+    ts: Date.now()
+  };
+  lobbyRef.set(lobbyData);
+  // Listen for players joining
+  lobbyRef.child('players').on('value', snap => {
+    const players = snap.val();
+    if (!players) return;
+    // Rebuild teams from Firebase players list
+    const arr = Object.values(players);
+    if (CFG.mode==='teams') {
+      // Reset team players, re-add from Firebase
+      G.teams.forEach(t => t.players=[]);
+      arr.forEach(p => {
+        const ti = p.teamIdx||0;
+        if (G.teams[ti]) G.teams[ti].players.push(p);
+      });
+    } else {
+      G.teams[0].players = arr;
+    }
+    renderLobbyView();
+  });
+  // Register host as first player
+  lobbyRef.child('players/'+G.playerNumber).set({
+    name:G.name, number:G.playerNumber, kills:0, alive:true,
+    lives:CFG.lives, teamIdx:G.myTeam, isHost:true
+  });
 }
-function syncKillToFirebase(targetName, targetNum) {
-  if (!db || !lobbyRef) return;
-  lobbyRef.child('kills').push({ by:G.name, target:targetName, number:targetNum, ts:Date.now() });
-  const teamIdx = G.teams.findIndex(t=>t.players.find(p=>p.number===targetNum));
-  const playerIdx = teamIdx>=0 ? G.teams[teamIdx].players.findIndex(p=>p.number===targetNum) : -1;
-  if (teamIdx>=0 && playerIdx>=0) lobbyRef.child(`teams/${teamIdx}/players/${playerIdx}/alive`).set(false);
-}
-function listenToFirebase(code) {
+
+function joinLobbyFirebase(code, name) {
   if (!db) return;
   lobbyRef = db.ref('lobbies/'+code);
   lobbyRef.once('value', snap => {
     const data = snap.val();
-    if (!data) { toast('Lobby niet gevonden','red'); return; }
+    if (!data) { toast('Lobby niet gevonden — controleer de code','red'); go('s-join'); return; }
+    // Load lobby settings
     Object.assign(CFG, data.cfg);
-    G.teams = data.teams;
-    renderLobbyView(); renderLobbySettings();
+    CENTER = data.center || CENTER;
+    MAX_RADIUS = data.radius || MAX_RADIUS;
+    G.lives = CFG.lives; G.maxLives = CFG.lives;
+    G.graceRemaining = CFG.gracePeriodMin*60; G.graceActive=true;
+    // Assign team for joiner
+    if (CFG.mode==='teams') {
+      // Find team with fewest players
+      const existingPlayers = data.players ? Object.values(data.players) : [];
+      const teamCounts = Array(CFG.numTeams).fill(0);
+      existingPlayers.forEach(p => { if(p.teamIdx<CFG.numTeams) teamCounts[p.teamIdx]++; });
+      G.myTeam = teamCounts.indexOf(Math.min(...teamCounts));
+    } else {
+      G.myTeam = 0;
+    }
+    // Register this player in Firebase
+    lobbyRef.child('players/'+G.playerNumber).set({
+      name:name, number:G.playerNumber, kills:0, alive:true,
+      lives:CFG.lives, teamIdx:G.myTeam, isHost:false
+    });
+    // Remove player when they disconnect
+    lobbyRef.child('players/'+G.playerNumber).onDisconnect().remove();
+    // Listen for all players
+    lobbyRef.child('players').on('value', snap => {
+      const players = snap.val();
+      if (!players) return;
+      const arr = Object.values(players);
+      if (CFG.mode==='teams') {
+        G.teams = CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
+        arr.forEach(p => { const ti=p.teamIdx||0; if(G.teams[ti]) G.teams[ti].players.push(p); });
+      } else {
+        if (!G.teams.length) G.teams=[{name:'FFA',color:0,players:[]}];
+        G.teams[0].players = arr;
+      }
+      renderLobbyView(); renderLobbySettings();
+    });
+    // Listen for game start
+    lobbyRef.child('started').on('value', snap => {
+      if (snap.val()===true && !G.gameStarted) {
+        G.gameStarted=true;
+        startGame();
+      }
+    });
+    // Listen for player state changes (kills, eliminated)
+    lobbyRef.child('gameState').on('value', snap => {
+      const state = snap.val();
+      if (!state) return;
+      if (state.players) {
+        Object.entries(state.players).forEach(([num,data]) => {
+          allPlayers().forEach(p => {
+            if (p.number===num) { p.lives=data.lives; p.alive=data.alive; }
+          });
+        });
+        updAlive();
+      }
+    });
   });
-  lobbyRef.child('teams').on('value', snap => {
-    const teams = snap.val();
-    if (teams) { G.teams=teams; renderLobbyView(); updAlive(); }
-  });
+}
+
+function syncKillToFirebase(targetName, targetNum) {
+  if (!db || !lobbyRef) return;
+  // Update target's state in Firebase
+  lobbyRef.child('gameState/players/'+targetNum).set({ alive:false, lives:0 });
+  // Update killer's kill count
+  lobbyRef.child('players/'+G.playerNumber+'/kills').transaction(k => (k||0)+1);
+  lobbyRef.child('kills').push({ by:G.name, target:targetName, number:targetNum, ts:Date.now() });
+}
+
+function syncGameStartToFirebase() {
+  if (!db || !lobbyRef) return;
+  lobbyRef.child('started').set(true);
 }
 
 // ═══════════════════════════════════════════════════════════
