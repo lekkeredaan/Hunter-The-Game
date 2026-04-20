@@ -2,142 +2,402 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>Hunter — Urban Elimination Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Hunter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
 :root{
-  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--border:#2a2a3a;
-  --accent:#e8f44a;--accent2:#4af4a0;--accent3:#f44a7a;--text:#f0f0f8;--muted:#6b6b8a;
-  --fn:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;
+  --zinc-950:#09090b;
+  --zinc-900:#18181b;
+  --zinc-800:#27272a;
+  --zinc-700:#3f3f46;
+  --zinc-600:#52525b;
+  --zinc-500:#71717a;
+  --zinc-400:#a1a1aa;
+  --zinc-300:#d4d4d8;
+  --zinc-200:#e4e4e7;
+  --zinc-100:#f4f4f5;
+  --zinc-50:#fafafa;
+  --rose:#f43f5e;
+  --rose-dark:#e11d48;
+  --rose-muted:rgba(244,63,94,.12);
+  --emerald:#10b981;
+  --emerald-muted:rgba(16,185,129,.12);
+  --amber:#f59e0b;
+  --amber-muted:rgba(245,158,11,.12);
+  --blue:#3b82f6;
+  --blue-muted:rgba(59,130,246,.12);
+  --f-display:'Outfit',sans-serif;
+  --f-mono:'JetBrains Mono',monospace;
 }
-body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;-webkit-tap-highlight-color:transparent}
-.screen{display:none;min-height:100vh;padding:1.25rem;max-width:500px;margin:0 auto;flex-direction:column;gap:.8rem}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--zinc-950);
+  color:var(--zinc-100);
+  font-family:var(--f-display);
+  min-height:100dvh;
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── SCREENS ── */
+.screen{display:none;min-height:100dvh;padding:1.5rem 1.25rem 2rem;max-width:480px;margin:0 auto;flex-direction:column;gap:1rem}
 .screen.active{display:flex}
-h1{font-family:var(--fn);font-size:3rem;letter-spacing:2px;color:var(--accent);line-height:1}
-h2{font-family:var(--fn);font-size:1.7rem;color:var(--text)}
-h3{font-size:.72rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1rem}
-.btn{width:100%;padding:13px;border:none;border-radius:11px;font-family:var(--fb);font-size:.95rem;font-weight:500;cursor:pointer;transition:opacity .15s;-webkit-tap-highlight-color:transparent}
-.btn-primary{background:var(--accent);color:#0a0a0f}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.btn-danger{background:var(--accent3);color:#fff;border:none}
-.btn-back{background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 14px;border-radius:9px;font-family:var(--fb);font-size:.85rem;cursor:pointer;width:auto}
-.btn-small{padding:7px 12px;font-size:.78rem;border-radius:8px;border:none;cursor:pointer;font-family:var(--fb);font-weight:500}
-input,select{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:var(--fb);font-size:.9rem;outline:none}
-input[type=range]{padding:5px 0;background:transparent;border:none}
-input[type=checkbox]{width:auto;cursor:pointer}
-input:focus,select:focus{border-color:var(--accent)}
-label{font-size:.8rem;color:var(--muted);margin-bottom:3px;display:block}
-.row{display:flex;gap:.6rem;align-items:center}.flex1{flex:1}
-.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.72rem;font-weight:500}
-.badge-alive{background:#1a3a2a;color:var(--accent2)}.badge-dead{background:#3a1a1a;color:var(--accent3)}
-.lobby-code{font-family:var(--fn);font-size:2rem;letter-spacing:5px;color:var(--accent);text-align:center;padding:.8rem;background:var(--surface2);border-radius:11px}
 
-/* 5-DIGIT NUMBER CARD */
-.player-number-card{background:#fff;border-radius:16px;padding:2rem 1.5rem;display:flex;flex-direction:column;align-items:center;gap:.5rem}
-.player-big-number{font-family:var(--fn);font-size:5rem;color:#0a0a0f;letter-spacing:8px;line-height:1}
-.player-number-name{font-size:1.1rem;font-weight:500;color:#0a0a0f}
-.player-number-team{padding:4px 16px;border-radius:20px;font-size:.85rem;font-weight:500;margin-top:2px}
-.number-print-hint{font-size:.72rem;color:var(--muted);text-align:center;margin-top:.35rem}
-.number-hearts{display:flex;gap:4px;margin-top:4px}
+/* ── TYPOGRAPHY ── */
+.display{font-size:3.5rem;font-weight:900;letter-spacing:-2px;line-height:.95;color:var(--zinc-50)}
+.display .accent{color:var(--rose)}
+.title{font-size:1.5rem;font-weight:700;letter-spacing:-0.5px;color:var(--zinc-50)}
+.subtitle{font-size:.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--zinc-500)}
+.body-sm{font-size:.85rem;color:var(--zinc-400);line-height:1.65}
+.mono{font-family:var(--f-mono)}
 
-/* MAP */
-.map-wrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border);height:270px}
+/* ── DIVIDERS ── */
+.divider{height:1px;background:var(--zinc-800);border:none;margin:.25rem 0}
+
+/* ── SECTION LABEL ── */
+.section-label{font-size:.65rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--zinc-600);padding:.75rem 0 .4rem}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;padding:14px 20px;border:none;border-radius:12px;
+  font-family:var(--f-display);font-size:.95rem;font-weight:600;
+  cursor:pointer;transition:transform .12s,opacity .12s;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+.btn:active{transform:scale(0.98)}
+.btn-primary{background:var(--rose);color:#fff}
+.btn-primary:hover{background:var(--rose-dark)}
+.btn-ghost{background:transparent;color:var(--zinc-300);border:1px solid var(--zinc-800)}
+.btn-ghost:hover{background:var(--zinc-900);border-color:var(--zinc-700)}
+.btn-danger{background:rgba(244,63,94,.15);color:var(--rose);border:1px solid rgba(244,63,94,.25)}
+.btn-danger:hover{background:rgba(244,63,94,.22)}
+.btn-success{background:var(--emerald-muted);color:var(--emerald);border:1px solid rgba(16,185,129,.25)}
+.btn-sm{padding:8px 14px;font-size:.8rem;border-radius:9px;width:auto}
+
+/* ── BACK BUTTON ── */
+.btn-back{
+  display:inline-flex;align-items:center;gap:.35rem;
+  background:transparent;border:none;color:var(--zinc-500);
+  font-family:var(--f-display);font-size:.82rem;font-weight:500;
+  cursor:pointer;padding:.25rem 0;transition:color .15s;width:auto;
+}
+.btn-back:hover{color:var(--zinc-200)}
+.btn-back svg{width:16px;height:16px}
+
+/* ── INPUTS ── */
+input,select{
+  width:100%;padding:13px 14px;
+  background:var(--zinc-900);border:1px solid var(--zinc-800);
+  border-radius:10px;color:var(--zinc-100);
+  font-family:var(--f-display);font-size:.95rem;outline:none;
+  transition:border-color .15s;
+}
+input:focus,select:focus{border-color:var(--rose)}
+input[type=range]{padding:6px 0;background:transparent;border:none;accent-color:var(--rose)}
+input[type=checkbox]{width:auto}
+select option{background:var(--zinc-900)}
+.input-label{font-size:.78rem;font-weight:500;color:var(--zinc-400);margin-bottom:5px;display:block}
+.input-hint{font-size:.72rem;color:var(--zinc-600);margin-top:4px}
+.input-group{display:flex;flex-direction:column;gap:0}
+
+/* ── CARDS / SURFACES ── */
+.surface{background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:16px;padding:1.1rem 1.2rem}
+.surface-flat{border-radius:12px;background:var(--zinc-900);border:1px solid var(--zinc-800)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600}
+.badge-alive{background:var(--emerald-muted);color:var(--emerald)}
+.badge-dead{background:var(--rose-muted);color:var(--rose)}
+.badge-host{background:var(--amber-muted);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.badge-demo{background:var(--amber-muted);color:var(--amber)}
+.badge-connected{background:var(--emerald-muted);color:var(--emerald)}
+.badge-disconnected{background:var(--rose-muted);color:var(--rose)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot-green{background:var(--emerald)}
+.dot-red{background:var(--rose)}
+.dot-amber{background:var(--amber)}
+
+/* ── RANGE SLIDER ROW ── */
+.range-row{display:flex;align-items:center;gap:.75rem}
+.range-row input[type=range]{flex:1}
+.range-val{font-family:var(--f-mono);font-size:.85rem;color:var(--zinc-200);min-width:52px;text-align:right;font-weight:700}
+
+/* ── LOBBY CODE ── */
+.lobby-code-display{
+  font-family:var(--f-mono);font-size:2.5rem;font-weight:700;
+  letter-spacing:10px;color:var(--zinc-50);text-align:center;
+  padding:1.25rem;background:var(--zinc-900);border-radius:12px;
+  border:1px solid var(--zinc-800);
+}
+
+/* ── NUMBER CARD ── */
+.number-card{
+  background:#fff;border-radius:20px;
+  padding:2.5rem 2rem;display:flex;flex-direction:column;
+  align-items:center;gap:.6rem;
+}
+.number-card-game{font-size:.65rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#71717a}
+.number-big{font-family:var(--f-mono);font-size:5.5rem;font-weight:700;color:#09090b;letter-spacing:6px;line-height:1}
+.number-name{font-size:1rem;font-weight:600;color:#18181b}
+.number-team-pill{padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:600}
+
+/* ── MAP ── */
+.map-wrap{border-radius:16px;overflow:hidden;border:1px solid var(--zinc-800);height:260px;position:relative}
 #leafmap{height:100%;width:100%}
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
-.stat-box{background:var(--surface2);border-radius:10px;padding:.6rem;text-align:center}
-.stat-num{font-family:var(--fn);font-size:1.5rem;color:var(--accent)}
-.stat-label{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
 
-/* POWERUPS */
-.pu-slots{display:flex;gap:.45rem}
-.pu-slot{flex:1;padding:.65rem .4rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);text-align:center;cursor:pointer;transition:all .15s}
-.pu-slot.filled{border-color:var(--accent)}.pu-slot.empty{opacity:.35;cursor:default}
-.pu-icon{font-size:1.25rem}.pu-name{font-size:.6rem;color:var(--muted);margin-top:2px}
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+.stat-cell{background:var(--zinc-900);border-radius:10px;padding:.7rem .5rem;text-align:center;border:1px solid var(--zinc-800)}
+.stat-num{font-family:var(--f-mono);font-size:1.6rem;font-weight:700;color:var(--zinc-50);line-height:1}
+.stat-lbl{font-size:.58rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--zinc-600);margin-top:3px}
 
-.action-bar{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-.btn-scan{background:var(--accent);color:#0a0a0f;padding:13px;border:none;border-radius:11px;font-family:var(--fb);font-size:.9rem;font-weight:500;cursor:pointer}
-.btn-act{background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:13px;border-radius:11px;font-family:var(--fb);font-size:.9rem;cursor:pointer}
+/* ── TIMER BAR ── */
+.timer-bar{
+  display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;
+  background:var(--zinc-900);border:1px solid var(--zinc-800);
+  border-radius:12px;overflow:hidden;
+}
+.timer-cell{padding:.65rem .4rem;text-align:center}
+.timer-cell .lbl{font-size:.55rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--zinc-600)}
+.timer-cell .val{font-family:var(--f-mono);font-size:1.1rem;font-weight:700;color:var(--zinc-200);margin-top:1px}
+.timer-divider{background:var(--zinc-800)}
 
-.pulse-bar{display:flex;align-items:center;justify-content:space-between;padding:.55rem .8rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);flex-wrap:wrap;gap:.35rem}
-.pbar-item{text-align:center}.pbar-item .lbl{font-size:.58rem;color:var(--muted)}.pbar-item .val{font-family:var(--fn);font-size:1.1rem}
-.pbar-div{width:1px;height:26px;background:var(--border)}
+/* ── POWERUP SLOTS ── */
+.pu-grid{display:flex;gap:.5rem}
+.pu-slot{
+  flex:1;padding:.75rem .4rem;border-radius:11px;text-align:center;
+  cursor:pointer;transition:all .15s;border:1px solid var(--zinc-800);
+  background:var(--zinc-900);
+}
+.pu-slot.filled{border-color:rgba(244,63,94,.4);background:var(--rose-muted)}
+.pu-slot.empty{opacity:.3;cursor:default}
+.pu-slot:active{transform:scale(0.97)}
+.pu-icon-lg{font-size:1.4rem;display:flex;align-items:center;justify-content:center}
+.pu-icon-lg svg{width:24px;height:24px}
+.pu-label{font-size:.62rem;font-weight:600;color:var(--zinc-400);margin-top:3px;letter-spacing:.3px}
 
-.zone-shrink-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
-.zone-shrink-fill{height:100%;background:var(--accent3);border-radius:3px;transition:width 1s linear}
-.outside-warn{background:#3a1510;border:1px solid var(--accent3);border-radius:10px;padding:.55rem .85rem;font-size:.82rem;color:var(--accent3);display:none;text-align:center}
+/* ── NAV TABS ── */
+.nav-tabs{display:flex;gap:3px;background:var(--zinc-900);border-radius:11px;padding:3px;border:1px solid var(--zinc-800)}
+.nav-tab{
+  flex:1;padding:8px 4px;border:none;border-radius:8px;
+  background:transparent;color:var(--zinc-500);
+  font-family:var(--f-display);font-size:.72rem;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.nav-tab.active{background:var(--zinc-800);color:var(--zinc-100)}
 
-.lb-row{display:flex;align-items:center;gap:.6rem;padding:.55rem .8rem;border-radius:9px;background:var(--surface2);border:1px solid var(--border);margin-bottom:.35rem}
-.lb-rank{font-family:var(--fn);font-size:1.2rem;color:var(--muted);width:22px}
-.lb-rank.gold{color:#f4c430}.lb-rank.silver{color:#a8b0b8}.lb-rank.bronze{color:#c87941}
-.lb-name{flex:1;font-weight:500;font-size:.88rem}
-.lb-kills{font-family:var(--fn);font-size:1rem;color:var(--accent)}
-
-.admin-player{display:flex;align-items:center;justify-content:space-between;padding:.55rem .8rem;background:var(--surface2);border-radius:9px;border:1px solid var(--border);gap:.4rem;margin-bottom:.35rem}
-.team-card{border-radius:12px;border:2px solid;padding:.8rem;margin-bottom:.4rem}
-
-.nav-tabs{display:flex;gap:.3rem;background:var(--surface2);border-radius:10px;padding:3px}
-.nav-tab{flex:1;padding:7px 3px;border:none;border-radius:7px;background:transparent;color:var(--muted);font-family:var(--fb);font-size:.72rem;cursor:pointer;transition:all .15s}
-.nav-tab.active{background:var(--surface);color:var(--text)}
-
-.setting-row{display:flex;align-items:center;gap:.55rem;padding:.4rem 0;border-bottom:1px solid var(--border)}
-.setting-row:last-child{border-bottom:none}
-.setting-label{flex:1;font-size:.85rem}
-.setting-val{font-family:var(--fn);font-size:.95rem;color:var(--accent);min-width:40px;text-align:right}
-
-.mode-btn{flex:1;padding:9px 5px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:var(--fb);font-size:.8rem;cursor:pointer;transition:all .15s;text-align:center}
-.mode-btn.active{border-color:var(--accent);color:var(--accent);background:#1e1e10}
-.tsz-btn{padding:9px 4px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:var(--fn);font-size:1rem;cursor:pointer;text-align:center;transition:all .15s}
-.tsz-btn.active{border-color:var(--accent);color:var(--accent);background:#1e1e10}
-
-.pu-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.4rem 0;border-bottom:1px solid var(--border)}
-.pu-toggle-row:last-child{border-bottom:none}
-.toggle{position:relative;width:36px;height:20px;display:inline-block;cursor:pointer;flex-shrink:0}
+/* ── TOGGLE ── */
+.toggle{position:relative;width:38px;height:22px;display:inline-block;cursor:pointer;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:20px;transition:.2s}
-.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:var(--muted);border-radius:50%;transition:.2s}
-.toggle input:checked+.toggle-slider{background:var(--accent)}
-.toggle input:checked+.toggle-slider:before{transform:translateX(16px);background:#0a0a0f}
+.toggle-track{position:absolute;inset:0;background:var(--zinc-700);border-radius:11px;transition:.2s}
+.toggle-thumb{position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle input:checked~.toggle-track{background:var(--rose)}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
 
-.pu-tooltip{position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.65rem .85rem;font-size:.82rem;z-index:9999;max-width:220px;pointer-events:none;opacity:0;transition:opacity .15s}
+/* ── ZONE BAR ── */
+.zone-bar-wrap{display:flex;flex-direction:column;gap:4px}
+.zone-bar-row{display:flex;justify-content:space-between;align-items:center}
+.zone-bar-lbl{font-size:.65rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--zinc-600)}
+.zone-bar-pct{font-family:var(--f-mono);font-size:.72rem;font-weight:700;color:var(--rose)}
+.zone-bar-track{height:5px;background:var(--zinc-800);border-radius:3px;overflow:hidden}
+.zone-bar-fill{height:100%;background:var(--rose);border-radius:3px;transition:width 1s linear}
+
+/* ── ALERT BANNERS ── */
+.alert{padding:.65rem 1rem;border-radius:10px;font-size:.82rem;font-weight:500;display:none}
+.alert-danger{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rose)}
+.alert-info{background:var(--blue-muted);border:1px solid rgba(59,130,246,.2);color:var(--blue)}
+
+/* ── LEADERBOARD ── */
+.lb-row{display:flex;align-items:center;gap:.65rem;padding:.65rem .85rem;border-radius:10px;background:var(--zinc-900);border:1px solid var(--zinc-800);margin-bottom:.4rem}
+.lb-rank{font-family:var(--f-mono);font-size:1.1rem;font-weight:700;color:var(--zinc-600);width:20px;text-align:center}
+.lb-rank.gold{color:#f59e0b}
+.lb-rank.silver{color:#9ca3af}
+.lb-rank.bronze{color:#d97706}
+.lb-name{flex:1;font-size:.88rem;font-weight:500}
+.lb-kills{font-family:var(--f-mono);font-size:1rem;font-weight:700;color:var(--zinc-300)}
+
+/* ── ADMIN PLAYER ROW ── */
+.admin-row{display:flex;align-items:center;justify-content:space-between;padding:.65rem .85rem;background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:10px;gap:.5rem;margin-bottom:.4rem}
+
+/* ── TEAM CARD ── */
+.team-chip{border-radius:10px;border:1.5px solid;padding:.85rem 1rem;margin-bottom:.4rem}
+
+/* ── MODE BUTTONS ── */
+.mode-row{display:flex;gap:.5rem}
+.mode-btn{
+  flex:1;padding:10px 6px;border-radius:10px;
+  border:1px solid var(--zinc-800);background:transparent;
+  color:var(--zinc-500);font-family:var(--f-display);font-size:.85rem;font-weight:600;
+  cursor:pointer;transition:all .15s;
+}
+.mode-btn.active{border-color:var(--rose);background:var(--rose-muted);color:var(--rose)}
+
+/* ── SIZE BUTTONS ── */
+.size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
+.size-btn{
+  padding:10px 4px;border-radius:9px;border:1px solid var(--zinc-800);
+  background:transparent;color:var(--zinc-500);
+  font-family:var(--f-mono);font-size:.9rem;font-weight:700;
+  cursor:pointer;transition:all .15s;text-align:center;
+}
+.size-btn.active{border-color:var(--rose);background:var(--rose-muted);color:var(--rose)}
+
+/* ── PU TOGGLE ROW ── */
+.pu-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--zinc-800);gap:.75rem}
+.pu-toggle-row:last-child{border-bottom:none}
+.pu-toggle-info{flex:1}
+.pu-toggle-name{font-size:.88rem;font-weight:600;color:var(--zinc-200)}
+.pu-toggle-desc{font-size:.72rem;color:var(--zinc-500);margin-top:2px;line-height:1.4}
+
+/* ── SETTINGS PREVIEW ── */
+.settings-preview{
+  background:var(--zinc-900);border:1px solid var(--zinc-800);
+  border-radius:12px;padding:.9rem 1rem;
+}
+.settings-preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.sp-item{display:flex;flex-direction:column;gap:1px}
+.sp-key{font-size:.62rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--zinc-600)}
+.sp-val{font-family:var(--f-mono);font-size:.88rem;font-weight:700;color:var(--zinc-200)}
+
+/* ── MAP PU POPUP ── */
+.pu-map-overlay{
+  position:fixed;inset:0;z-index:9998;
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+}
+.pu-map-card{
+  background:var(--zinc-900);border:1px solid var(--zinc-800);
+  border-radius:18px;padding:1.4rem 1.25rem 1.25rem;
+  max-width:280px;width:100%;position:relative;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+}
+.pu-map-close{
+  position:absolute;top:.65rem;right:.65rem;
+  background:transparent;border:none;color:var(--zinc-500);
+  cursor:pointer;padding:5px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  transition:color .15s,background .15s;
+}
+.pu-map-close:hover{color:var(--zinc-100);background:var(--zinc-800)}
+
+/* ── TOOLTIP ── */
+.pu-tooltip{
+  position:fixed;background:var(--zinc-800);border:1px solid var(--zinc-700);
+  border-radius:12px;padding:.75rem 1rem;font-size:.82rem;z-index:9999;
+  max-width:220px;pointer-events:none;opacity:0;transition:opacity .15s;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
 .pu-tooltip.show{opacity:1}
 
-/* ENTER NUMBER MODAL */
-.number-input-big{font-family:var(--fn);font-size:2.5rem;letter-spacing:6px;text-align:center;background:var(--surface2);border:2px solid var(--accent);border-radius:12px;color:var(--accent);padding:.75rem;width:100%}
-
-.elim-big{font-family:var(--fn);font-size:3rem;color:var(--accent3)}
-.rules-section{margin-bottom:.75rem}
-.rules-section h3{margin-bottom:.4rem;color:var(--accent)}
-.rules-section p,.rules-section li{font-size:.85rem;color:var(--muted);line-height:1.65}
-.rules-section ul{padding-left:1.1rem}
-
-.toast-container{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:9998;display:flex;flex-direction:column;gap:.4rem;align-items:center;pointer-events:none}
-.toast{background:var(--accent);color:#0a0a0f;padding:10px 20px;border-radius:30px;font-weight:500;font-size:.85rem;opacity:0;transition:opacity .3s;white-space:nowrap}
-.toast.show{opacity:1}
-.toast.red{background:var(--accent3);color:#fff}
-.toast.green{background:var(--accent2);color:#0a0a0f}
-
-/* FIREBASE STATUS */
-.fb-status{display:flex;align-items:center;gap:.4rem;font-size:.72rem;padding:.35rem .65rem;border-radius:8px;background:var(--surface2)}
-.fb-dot{width:7px;height:7px;border-radius:50%}
-.fb-dot.connected{background:var(--accent2)}.fb-dot.disconnected{background:var(--accent3)}.fb-dot.demo{background:var(--accent)}
-
-@media print {
-  body{background:#fff;color:#000}
-  .player-number-card{border:3px solid #000;page-break-inside:avoid}
-  .player-big-number{color:#000;font-size:8rem}
-  .screen{display:block!important}
-  .btn,.btn-back,.nav-tabs,.pulse-bar,.stats-row,.map-wrap,.action-bar,.outside-warn,.zone-shrink-bar{display:none!important}
+/* ── TARGET INPUT ── */
+.target-input{
+  font-family:var(--f-mono);font-size:2.8rem;font-weight:700;
+  letter-spacing:8px;text-align:center;
+  background:var(--zinc-900);border:1.5px solid var(--zinc-700);
+  border-radius:14px;color:var(--zinc-50);padding:.9rem;width:100%;
+  transition:border-color .15s;
 }
+.target-input:focus{border-color:var(--rose);outline:none}
+
+/* ── TOAST ── */
+.toast-container{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:.4rem;align-items:center;pointer-events:none}
+.toast{
+  background:var(--zinc-800);color:var(--zinc-100);
+  padding:10px 20px;border-radius:30px;
+  font-size:.82rem;font-weight:600;
+  opacity:0;transition:opacity .25s;white-space:nowrap;
+  border:1px solid var(--zinc-700);
+  box-shadow:0 4px 16px rgba(0,0,0,.4);
+}
+.toast.show{opacity:1}
+.toast.red{background:var(--rose);color:#fff;border-color:var(--rose)}
+.toast.green{background:var(--emerald);color:#fff;border-color:var(--emerald)}
+
+/* ── HEADER ROW ── */
+.screen-header{display:flex;align-items:center;gap:.75rem;padding-bottom:.25rem}
+.screen-header-right{margin-left:auto}
+
+/* ── ELIM SCREEN ── */
+.elim-display{
+  padding:3rem 1.5rem 2rem;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:.65rem;
+}
+.elim-icon{
+  width:72px;height:72px;border-radius:50%;
+  background:var(--rose-muted);border:2px solid rgba(244,63,94,.3);
+  display:flex;align-items:center;justify-content:center;
+}
+.elim-title{font-size:2.2rem;font-weight:900;letter-spacing:-1px;color:var(--rose)}
+.elim-kills{font-family:var(--f-mono);font-size:2.8rem;font-weight:700;color:var(--zinc-50)}
+
+/* ── HOW TO CARD ── */
+.how-to-item{display:flex;gap:.75rem;align-items:flex-start;padding:.5rem 0}
+.how-to-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--rose-muted);border:1px solid rgba(244,63,94,.3);
+  color:var(--rose);font-size:.72rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  margin-top:1px;
+}
+.how-to-text{font-size:.85rem;color:var(--zinc-400);line-height:1.5}
+
+/* ── RULES ── */
+.rule-block{padding:.9rem 0;border-bottom:1px solid var(--zinc-800)}
+.rule-block:last-child{border-bottom:none}
+.rule-title{font-size:.82rem;font-weight:700;color:var(--zinc-200);margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
+.rule-body{font-size:.8rem;color:var(--zinc-500);line-height:1.6}
+.rule-body ul{padding-left:1.1rem}
+.rule-body li{margin-bottom:.2rem}
+
+/* ── PU DETAIL ROW ── */
+.pu-detail-row{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem 0;border-bottom:1px solid var(--zinc-800)}
+.pu-detail-row:last-child{border-bottom:none}
+.pu-detail-icon{font-size:1.1rem;margin-top:1px;flex-shrink:0;width:24px;display:flex;align-items:center;justify-content:center}
+.pu-detail-icon svg{width:18px;height:18px}
+.pu-detail-name{font-size:.85rem;font-weight:600;color:var(--zinc-200)}
+.pu-detail-desc{font-size:.75rem;color:var(--zinc-500);margin-top:1px;line-height:1.45}
+
+/* ── PLAYER ITEM ── */
+.player-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem .85rem;border-bottom:1px solid var(--zinc-800)}
+.player-row:last-child{border-bottom:none}
+.player-row-name{font-size:.88rem;font-weight:500}
+.player-row-num{font-family:var(--f-mono);font-size:.9rem;font-weight:700;color:var(--zinc-400)}
+
+/* ── FB STATUS ── */
+.fb-status-bar{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:8px}
+.fb-status-text{font-size:.72rem;color:var(--zinc-500)}
+
+/* ── PRINT ── */
+@media print{
+  body{background:#fff}
+  .number-card{border:3px solid #09090b;page-break-inside:avoid}
+  .number-big{color:#09090b}
+  .screen{display:block!important}
+  .btn,.btn-back,.nav-tabs,.timer-bar,.stat-grid,.map-wrap,.zone-bar-wrap,.alert{display:none!important}
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.screen.active>*{animation:fadeUp .25s ease both}
+.screen.active>*:nth-child(1){animation-delay:.03s}
+.screen.active>*:nth-child(2){animation-delay:.06s}
+.screen.active>*:nth-child(3){animation-delay:.09s}
+.screen.active>*:nth-child(4){animation-delay:.12s}
+.screen.active>*:nth-child(5){animation-delay:.14s}
+.screen.active>*:nth-child(6){animation-delay:.16s}
+.screen.active>*:nth-child(7){animation-delay:.18s}
+.dot-pulse{animation:pulse-dot 2s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -145,322 +405,475 @@ label{font-size:.8rem;color:var(--muted);margin-bottom:3px;display:block}
 <div class="toast-container" id="toasts"></div>
 <div class="pu-tooltip" id="pu-tooltip"></div>
 
-<!-- ═══════════════════════════════ HOME ═══════════════════════════════ -->
+<div id="pu-map-popup" style="display:none" class="pu-map-overlay" onclick="if(event.target===this)closePUMapPopup()">
+  <div class="pu-map-card">
+    <button class="pu-map-close" onclick="closePUMapPopup()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    <div id="pu-map-popup-icon" style="margin-bottom:.65rem"></div>
+    <div id="pu-map-popup-name" style="font-size:1.1rem;font-weight:700;margin-bottom:.4rem"></div>
+    <div id="pu-map-popup-desc" style="font-size:.85rem;color:var(--zinc-400);line-height:1.6"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ HOME ══════════════════════ -->
 <div class="screen active" id="s-home">
-  <div style="margin-top:1.5rem">
-    <h1>HUNTER</h1>
-    <div style="font-size:.9rem;color:var(--muted)">Urban elimination game</div>
+  <div style="padding-top:1rem">
+    <div class="subtitle" style="margin-bottom:.5rem">Urban elimination</div>
+    <div class="display">HUNT<span class="accent">ER</span></div>
   </div>
-  <div class="fb-status" id="fb-status-home">
-    <div class="fb-dot demo" id="fb-dot-home"></div>
-    <span id="fb-text-home">Demo modus — configureer Firebase voor multiplayer</span>
+
+  <div class="fb-status-bar" id="fb-status-home">
+    <span class="dot dot-amber dot-pulse" id="fb-dot-home"></span>
+    <span class="fb-status-text" id="fb-text-home">Demo modus — configureer Firebase voor multiplayer</span>
   </div>
-  <p style="font-size:.88rem;color:var(--muted);line-height:1.7">Typ het 5-cijferig nummer van een tegenstander in om hem te elimineren. Verdien power-ups door in speciale zones te staan. Overleef de pulse en de krimpende speelzone.</p>
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.85rem;display:flex;flex-direction:column;gap:.4rem">
-    <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Hoe werkt het?</div>
-    <div style="font-size:.83rem;color:var(--text);line-height:1.6">
-      1. Maak een lobby aan en deel de code met vrienden<br>
-      2. Iedereen krijgt een uniek 5-cijferig nummer — print dit op je rug<br>
-      3. Zie je iemands nummer? Typ het in om hem te elimineren!<br>
-      4. Gebruik power-ups strategisch om te overleven
+
+  <div class="surface" style="padding:.85rem 1rem">
+    <div class="subtitle" style="margin-bottom:.65rem">Hoe werkt het</div>
+    <div class="how-to-item"><div class="how-to-num">1</div><div class="how-to-text">Maak een lobby aan en deel de code met vrienden</div></div>
+    <div class="how-to-item"><div class="how-to-num">2</div><div class="how-to-text">Iedereen krijgt een uniek 5-cijferig nummer — print dit op je rug</div></div>
+    <div class="how-to-item"><div class="how-to-num">3</div><div class="how-to-text">Zie je iemands nummer? Typ het in om hem te elimineren</div></div>
+    <div class="how-to-item"><div class="how-to-num">4</div><div class="how-to-text">Verdien power-ups en overleef de krimpende zone</div></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem">
+    <button class="btn btn-primary" onclick="go('s-create')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M12 4v16M4 12h16"/></svg>
+      Lobby aanmaken
+    </button>
+    <button class="btn btn-ghost" onclick="go('s-join')">Lobby joinen</button>
+    <button class="btn btn-ghost" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
+    <button class="btn btn-danger" onclick="go('s-admin')">Admin paneel</button>
+  </div>
+</div>
+
+<!-- ══════════════════════ RULES ══════════════════════ -->
+<div class="screen" id="s-rules">
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-home')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Home
+    </button>
+  </div>
+  <div class="title">Spelregels</div>
+
+  <div class="surface">
+    <div class="rule-block">
+      <div class="rule-title">Doel</div>
+      <div class="rule-body">Elimineer alle andere spelers door hun 5-cijferig nummer in te typen. De laatste speler of het laatste team dat nog leeft wint.</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">Hoe speel je?</div>
+      <div class="rule-body"><ul><li>Iedereen print zijn nummerbord uit en plakt het op zijn rug.</li><li>Zie je een nummer? Typ het in via de "Nummer" tab.</li><li>Blijf binnen de rode cirkel — te lang buiten is automatisch af.</li><li>Iedereen start met het ingestelde aantal levens.</li></ul></div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">Pulse</div>
+      <div class="rule-body">Elke X minuten zijn alle spelers 10 seconden zichtbaar op de kaart. Plan je aanval!</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">Power-up zones</div>
+      <div class="rule-body">Verblijf de ingestelde tijd in een zone op de kaart om een power-up te verdienen. Max 2 tegelijk. Er zijn altijd twee actieve zones.</div>
+    </div>
+    <div class="rule-block">
+      <div class="rule-title">Speelzone</div>
+      <div class="rule-body">De rode cirkel krimpt gedurende het spel. Wie te lang buiten staat verliest een leven.</div>
     </div>
   </div>
-  <button class="btn btn-primary" onclick="go('s-create')">Lobby aanmaken</button>
-  <button class="btn btn-secondary" onclick="go('s-join')">Lobby joinen</button>
-  <button class="btn btn-secondary" onclick="go('s-rules')">Spelregels & power-ups</button>
-  <button class="btn btn-secondary" style="border-color:var(--accent3);color:var(--accent3)" onclick="go('s-admin')">Admin paneel</button>
+
+  <div>
+    <div class="subtitle" style="padding:.6rem 0 .4rem">Power-ups</div>
+    <div class="surface">
+      <div id="rules-pu-list"></div>
+    </div>
+  </div>
+
+  <button class="btn btn-ghost" onclick="go('s-home')">Terug</button>
 </div>
 
-<!-- ═══════════════════════════════ RULES ═══════════════════════════════ -->
-<div class="screen" id="s-rules">
-  <div class="row"><button class="btn-back" onclick="go('s-home')">← Home</button><h2>Spelregels</h2></div>
-  <div class="card rules-section"><h3>Doel</h3><p>Elimineer alle andere spelers (of teams) door hun 5-cijferig nummer in te typen. De laatste speler of het laatste team dat nog leeft, wint.</p></div>
-  <div class="card rules-section"><h3>Hoe speel je?</h3><ul><li>Iedereen print zijn nummerbord uit en plakt het op zijn rug.</li><li>Zie je iemands nummer? Typ het in via de "Nummer invoeren" knop.</li><li>Blijf binnen het rode speelgebied — te lang buiten = automatisch af.</li><li>Iedereen start met het ingestelde aantal levens.</li></ul></div>
-  <div class="card rules-section"><h3>Pulse</h3><p>Elke X minuten zijn alle spelers 10 seconden zichtbaar op de kaart. Plan je aanval!</p></div>
-  <div class="card rules-section"><h3>Power-up zones</h3><p>Verblijf de ingestelde tijd in een groene zone op de kaart om een power-up te verdienen. Max 2 tegelijk. Zones verplaatsen zich periodiek.</p></div>
-  <div class="card rules-section"><h3>Speelzone</h3><p>De rode cirkel krimpt gedurende het spel. Wie te lang buiten de rode lijn staat, verliest een leven en uiteindelijk het spel.</p></div>
-  <div class="card rules-section"><h3>Power-ups</h3><div id="rules-pu-list" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem"></div></div>
-  <button class="btn btn-primary" onclick="go('s-home')">Terug naar home</button>
-</div>
-
-<!-- ═══════════════════════════════ CREATE ═══════════════════════════════ -->
+<!-- ══════════════════════ CREATE ══════════════════════ -->
 <div class="screen" id="s-create">
-  <div class="row"><button class="btn-back" onclick="go('s-home')">← Home</button><h2>Lobby aanmaken</h2></div>
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-home')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Home
+    </button>
+  </div>
+  <div class="title">Lobby aanmaken</div>
 
-  <div class="card" style="display:flex;flex-direction:column;gap:.85rem">
-    <div>
-      <label>Jouw naam</label>
+  <!-- BASICS -->
+  <div class="surface" style="display:flex;flex-direction:column;gap:.85rem">
+    <div class="input-group">
+      <label class="input-label">Jouw naam</label>
       <input id="cn" placeholder="bijv. Daan" maxlength="20"/>
     </div>
-    <div>
-      <label>Speelgebied <span style="font-weight:400;color:var(--muted)">(ter info — wordt in de app getoond)</span></label>
+    <div class="input-group">
+      <label class="input-label">Speelgebied <span style="font-weight:400;color:var(--zinc-600)">(wordt getoond in de app)</span></label>
       <input id="ca" placeholder="bijv. Centrum Helmond"/>
     </div>
-    <div>
-      <label>Hoe lang duurt het spel?</label>
-      <div class="row"><input id="cd" type="range" min="15" max="180" value="60" step="5" oninput="updDur()"/><span class="setting-val" id="cd-lbl">60 min</span></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:3px">Na deze tijd stopt het spel automatisch.</div>
-    </div>
-    <div>
-      <label>Grace period — hoe lang mag niemand elimineren?</label>
-      <div class="row"><input id="s-grace" type="range" min="1" max="10" value="5" step="1" oninput="updGrace()"/><span class="setting-val" id="s-grace-lbl">5 min</span></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:3px">Aan het begin van het spel kan niemand geëlimineerd worden — tijd om je te verstoppen!</div>
-    </div>
-    <div>
-      <label>Straal van het speelveld</label>
-      <div class="row"><input id="s-radius" type="range" min="100" max="2000" value="400" step="50" oninput="updRadius()"/><span class="setting-val" id="s-radius-lbl">400 m</span></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:3px">De rode cirkel op de kaart. Jouw GPS-locatie wordt het middelpunt. Kies groter voor een dorp/stad, kleiner voor een park.</div>
-    </div>
-    <div>
-      <label>Levens per speler</label>
-      <div class="row"><input id="s-lives" type="range" min="1" max="5" value="1" step="1" oninput="updLives()"/><span class="setting-val" id="s-lives-lbl">1 ❤️</span></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:3px">Met 1 leven ben je na 1 scan direct af. Met meer levens moet iemand je meerdere keren raken.</div>
-    </div>
-    <div>
-      <label>Hoe lang mag je buiten de zone zijn?</label>
-      <div class="row"><input id="s-outside" type="range" min="30" max="300" value="120" step="30" oninput="updOutside()"/><span class="setting-val" id="s-outside-lbl">2:00</span></div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:3px">De rode cirkel op de kaart is de speelzone. Sta je hier te lang buiten, dan verlies je een leven.</div>
+  </div>
+
+  <!-- TIMING -->
+  <div>
+    <div class="subtitle" style="padding:.6rem 0 .4rem">Tijdinstellingen</div>
+    <div class="surface" style="display:flex;flex-direction:column;gap:.9rem">
+      <div>
+        <div class="input-label">Spelduur</div>
+        <div class="range-row"><input id="cd" type="range" min="15" max="180" value="60" step="5" oninput="updDur()"/><span class="range-val" id="cd-lbl">60 min</span></div>
+        <div class="input-hint">Na deze tijd stopt het spel automatisch.</div>
+      </div>
+      <div>
+        <div class="input-label">Grace period</div>
+        <div class="range-row"><input id="s-grace" type="range" min="1" max="10" value="5" step="1" oninput="updGrace()"/><span class="range-val" id="s-grace-lbl">5 min</span></div>
+        <div class="input-hint">Aan het begin kan niemand geëlimineerd worden — tijd om je te verstoppen.</div>
+      </div>
+      <div>
+        <div class="input-label">Straal speelveld</div>
+        <div class="range-row"><input id="s-radius" type="range" min="100" max="2000" value="400" step="50" oninput="updRadius()"/><span class="range-val" id="s-radius-lbl">400 m</span></div>
+        <div class="input-hint">Jouw GPS-locatie wordt het middelpunt van de rode cirkel.</div>
+      </div>
+      <div>
+        <div class="input-label">Levens per speler</div>
+        <div class="range-row"><input id="s-lives" type="range" min="1" max="5" value="1" step="1" oninput="updLives()"/><span class="range-val" id="s-lives-lbl">1</span></div>
+        <div class="input-hint">Met 1 leven ben je na 1 scan direct af.</div>
+      </div>
+      <div>
+        <div class="input-label">Max. tijd buiten zone</div>
+        <div class="range-row"><input id="s-outside" type="range" min="30" max="300" value="120" step="30" oninput="updOutside()"/><span class="range-val" id="s-outside-lbl">2:00</span></div>
+        <div class="input-hint">Te lang buiten de rode cirkel = leven verliezen.</div>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <h3 style="margin-bottom:.5rem">Spelmodus</h3>
-    <div class="row" style="gap:.45rem;margin-bottom:.5rem">
-      <button class="mode-btn active" id="mode-ffa" onclick="setMode('ffa')">Free for all</button>
-      <button class="mode-btn" id="mode-teams" onclick="setMode('teams')">Teams</button>
-    </div>
-    <div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem" id="mode-desc">Iedereen speelt voor zichzelf. De laatste speler die nog leeft wint.</div>
-    <div id="team-options" style="display:none">
-      <div style="margin-bottom:.55rem">
-        <label>Aantal teams</label>
-        <div class="row" style="gap:.4rem"><button class="tsz-btn active" id="nt-2" onclick="setNumTeams(2)">2</button><button class="tsz-btn" id="nt-3" onclick="setNumTeams(3)">3</button><button class="tsz-btn" id="nt-4" onclick="setNumTeams(4)">4</button></div>
+  <!-- ADVANCED -->
+  <div>
+    <div class="subtitle" style="padding:.6rem 0 .4rem">Geavanceerde instellingen</div>
+    <div class="surface" style="display:flex;flex-direction:column;gap:.9rem">
+      <div>
+        <div class="input-label">Pulse interval</div>
+        <div class="range-row"><input id="s-pulse" type="range" min="1" max="10" value="10" step="1" oninput="updSettings()"/><span class="range-val" id="s-pulse-lbl">10 min</span></div>
+        <div class="input-hint">Elke X min zijn alle spelers 10s zichtbaar op de kaart.</div>
       </div>
-      <div style="margin-bottom:.55rem">
-        <label>Spelers per team</label>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.35rem">
-          <button class="tsz-btn" id="ts-2" onclick="setTeamSize(2)">2</button><button class="tsz-btn" id="ts-3" onclick="setTeamSize(3)">3</button><button class="tsz-btn active" id="ts-4" onclick="setTeamSize(4)">4</button><button class="tsz-btn" id="ts-5" onclick="setTeamSize(5)">5</button><button class="tsz-btn" id="ts-6" onclick="setTeamSize(6)">6</button><button class="tsz-btn" id="ts-8" onclick="setTeamSize(8)">8</button><button class="tsz-btn" id="ts-10" onclick="setTeamSize(10)">10</button><button class="tsz-btn" id="ts-15" onclick="setTeamSize(15)">15</button>
-        </div>
+      <div>
+        <div class="input-label">Zone rotatie</div>
+        <div class="range-row"><input id="s-rot" type="range" min="2" max="15" value="15" step="1" oninput="updSettings()"/><span class="range-val" id="s-rot-lbl">15 min</span></div>
+        <div class="input-hint">Elke X min verplaatst de power-up zone naar een nieuwe plek.</div>
       </div>
-      <div style="padding:.5rem .7rem;background:var(--surface2);border-radius:9px;font-size:.8rem;color:var(--muted);margin-bottom:.55rem" id="team-summary">2 teams × 4 spelers = 8 totaal</div>
-      <div><label>Team namen</label><div id="team-name-inputs" style="display:flex;flex-direction:column;gap:.35rem"></div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3 style="margin-bottom:.6rem">Tijdinstellingen</h3>
-    <div style="display:flex;flex-direction:column">
-
-      <div class="setting-row">
-        <div class="setting-label">
-          <div style="font-weight:500">⚡ Pulse interval</div>
-          <div style="font-size:.72rem;color:var(--muted);margin-top:2px;line-height:1.5">Elke X minuten zijn alle spelers kort zichtbaar op de kaart — goed moment om te jagen!</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;margin-left:.5rem">
-          <input type="range" id="s-pulse" min="1" max="10" value="10" step="1" oninput="updSettings()" style="width:80px"/>
-          <div class="setting-val" id="s-pulse-lbl">10 min</div>
-        </div>
+      <div>
+        <div class="input-label">Tijd in zone voor power-up</div>
+        <div class="range-row"><input id="s-zone" type="range" min="1" max="5" value="5" step="1" oninput="updSettings()"/><span class="range-val" id="s-zone-lbl">5 min</span></div>
+        <div class="input-hint">Hoe lang moet je in de zone staan?</div>
       </div>
-
-      <div class="setting-row">
-        <div class="setting-label">
-          <div style="font-weight:500">📍 Zone rotatie</div>
-          <div style="font-size:.72rem;color:var(--muted);margin-top:2px;line-height:1.5">Elke X minuten verplaatst de groene power-up zone naar een nieuwe plek op de kaart.</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;margin-left:.5rem">
-          <input type="range" id="s-rot" min="2" max="15" value="15" step="1" oninput="updSettings()" style="width:80px"/>
-          <div class="setting-val" id="s-rot-lbl">15 min</div>
-        </div>
+      <div>
+        <div class="input-label">Zone krimpt tot</div>
+        <div class="range-row"><input id="s-shrink" type="range" min="10" max="80" value="25" step="5" oninput="updSettings()"/><span class="range-val" id="s-shrink-lbl">25%</span></div>
+        <div class="input-hint">Hoe klein wordt het speelveld op het einde?</div>
       </div>
-
-      <div class="setting-row">
-        <div class="setting-label">
-          <div style="font-weight:500">🎁 Tijd in zone voor power-up</div>
-          <div style="font-size:.72rem;color:var(--muted);margin-top:2px;line-height:1.5">Hoe lang moet je in de groene zone staan om een power-up te verdienen?</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;margin-left:.5rem">
-          <input type="range" id="s-zone" min="1" max="5" value="5" step="1" oninput="updSettings()" style="width:80px"/>
-          <div class="setting-val" id="s-zone-lbl">5 min</div>
-        </div>
-      </div>
-
-      <div class="setting-row">
-        <div class="setting-label">
-          <div style="font-weight:500">🔴 Zone krimpt tot</div>
-          <div style="font-size:.72rem;color:var(--muted);margin-top:2px;line-height:1.5">De rode speelzone wordt kleiner naarmate het spel vordert. Hoe klein is hij op het einde?</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;margin-left:.5rem">
-          <input type="range" id="s-shrink" min="10" max="80" value="25" step="5" oninput="updSettings()" style="width:80px"/>
-          <div class="setting-val" id="s-shrink-lbl">25%</div>
-        </div>
-      </div>
-
     </div>
   </div>
 
-  <div class="card">
-    <h3 style="margin-bottom:.3rem">Power-ups aan/uit</h3>
-    <div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem">Zet power-ups uit die je niet wil gebruiken in dit spel.</div>
-    <div id="pu-toggles"></div>
+  <!-- MODE -->
+  <div>
+    <div class="subtitle" style="padding:.6rem 0 .4rem">Spelmodus</div>
+    <div class="surface">
+      <div class="mode-row" style="margin-bottom:.75rem">
+        <button class="mode-btn active" id="mode-ffa" onclick="setMode('ffa')">Free for all</button>
+        <button class="mode-btn" id="mode-teams" onclick="setMode('teams')">Teams</button>
+      </div>
+      <div class="input-hint" id="mode-desc" style="margin-bottom:0">Iedereen speelt voor zichzelf. De laatste speler die nog leeft wint.</div>
+      <div id="team-options" style="display:none;margin-top:.85rem;display:flex;flex-direction:column;gap:.75rem;display:none">
+        <div>
+          <div class="input-label">Aantal teams</div>
+          <div style="display:flex;gap:.4rem">
+            <button class="size-btn active" id="nt-2" onclick="setNumTeams(2)" style="flex:1">2</button>
+            <button class="size-btn" id="nt-3" onclick="setNumTeams(3)" style="flex:1">3</button>
+            <button class="size-btn" id="nt-4" onclick="setNumTeams(4)" style="flex:1">4</button>
+          </div>
+        </div>
+        <div>
+          <div class="input-label">Spelers per team</div>
+          <div class="size-grid">
+            <button class="size-btn" id="ts-2" onclick="setTeamSize(2)">2</button>
+            <button class="size-btn" id="ts-3" onclick="setTeamSize(3)">3</button>
+            <button class="size-btn active" id="ts-4" onclick="setTeamSize(4)">4</button>
+            <button class="size-btn" id="ts-5" onclick="setTeamSize(5)">5</button>
+            <button class="size-btn" id="ts-6" onclick="setTeamSize(6)">6</button>
+            <button class="size-btn" id="ts-8" onclick="setTeamSize(8)">8</button>
+            <button class="size-btn" id="ts-10" onclick="setTeamSize(10)">10</button>
+            <button class="size-btn" id="ts-15" onclick="setTeamSize(15)">15</button>
+          </div>
+        </div>
+        <div class="input-hint" id="team-summary">2 teams × 4 spelers = 8 totaal</div>
+        <div>
+          <div class="input-label">Team namen</div>
+          <div id="team-name-inputs" style="display:flex;flex-direction:column;gap:.4rem"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div style="padding:.65rem .85rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-    <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.3rem">Samenvatting</div>
-    <div style="font-size:.82rem;color:var(--text);line-height:1.75" id="settings-preview"></div>
+  <!-- POWERUPS -->
+  <div>
+    <div class="subtitle" style="padding:.6rem 0 .4rem">Power-ups aan/uit</div>
+    <div class="surface"><div id="pu-toggles"></div></div>
   </div>
-  <button class="btn btn-primary" onclick="createLobby()">Lobby aanmaken</button>
+
+  <!-- PREVIEW -->
+  <div class="settings-preview">
+    <div class="subtitle" style="margin-bottom:.6rem">Samenvatting</div>
+    <div class="settings-preview-grid" id="settings-preview"></div>
+  </div>
+
+  <button class="btn btn-primary" onclick="createLobby()" id="create-btn">GPS ophalen &amp; aanmaken</button>
+  <button class="btn btn-ghost" id="skip-gps-btn" onclick="skipGPS()" style="display:none">Overslaan — zonder GPS verder</button>
 </div>
 
-<!-- ═══════════════════════════════ JOIN ═══════════════════════════════ -->
+<!-- ══════════════════════ JOIN ══════════════════════ -->
 <div class="screen" id="s-join">
-  <div class="row"><button class="btn-back" onclick="go('s-home')">← Home</button><h2>Lobby joinen</h2></div>
-  <div style="font-size:.85rem;color:var(--muted);line-height:1.6">Vraag de lobby code op bij de persoon die het spel heeft aangemaakt.</div>
-  <div class="card" style="display:flex;flex-direction:column;gap:.6rem">
-    <div>
-      <label>Jouw naam</label>
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-home')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Home
+    </button>
+  </div>
+  <div class="title">Lobby joinen</div>
+  <div class="body-sm">Vraag de lobby code op bij de persoon die het spel heeft aangemaakt.</div>
+  <div class="surface" style="display:flex;flex-direction:column;gap:.75rem">
+    <div class="input-group">
+      <label class="input-label">Jouw naam</label>
       <input id="jn" placeholder="bijv. Lisa" maxlength="20"/>
     </div>
-    <div>
-      <label>Lobby code <span style="font-weight:400;color:var(--muted)">(5 tekens, van de host)</span></label>
-      <input id="jc" placeholder="bijv. DAA42" maxlength="5" style="text-transform:uppercase;letter-spacing:4px;font-size:1.1rem"/>
+    <div class="input-group">
+      <label class="input-label">Lobby code</label>
+      <input id="jc" placeholder="DAA42" maxlength="5" style="text-transform:uppercase;letter-spacing:6px;font-size:1.3rem;font-family:var(--f-mono);font-weight:700"/>
     </div>
   </div>
   <button class="btn btn-primary" onclick="joinLobby()">Joinen</button>
 </div>
 
-<!-- ═══════════════════════════════ LOBBY ═══════════════════════════════ -->
+<!-- ══════════════════════ LOBBY ══════════════════════ -->
 <div class="screen" id="s-lobby">
-  <div class="row"><button class="btn-back" onclick="go('s-home')">← Home</button><h2>Lobby</h2></div>
-  <div class="card"><h3 style="margin-bottom:.4rem">Lobby code</h3><div class="lobby-code" id="lc-display">WOLF7</div><div style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:.35rem">Deel met vrienden</div></div>
-  <div class="card"><h3 style="margin-bottom:.55rem">Spelers (<span id="pc">0</span>)</h3><div id="lobby-teams-view"></div></div>
-  <div class="card"><h3 style="margin-bottom:.45rem">Instellingen</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem" id="lobby-settings-preview"></div></div>
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-home')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Home
+    </button>
+    <span class="badge badge-host screen-header-right" id="lobby-host-badge" style="display:none">HOST</span>
+  </div>
+  <div class="title">Lobby</div>
+
+  <div class="surface" style="text-align:center">
+    <div class="subtitle" style="margin-bottom:.5rem">Lobby code — deel met vrienden</div>
+    <div class="lobby-code-display" id="lc-display">WOLF7</div>
+  </div>
+
+  <div class="surface">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem">
+      <div class="subtitle">Spelers</div>
+      <div class="mono" style="font-size:.8rem;color:var(--zinc-400)"><span id="pc">0</span> ingecheckt</div>
+    </div>
+    <div id="lobby-teams-view"></div>
+  </div>
+
+  <div class="surface">
+    <div class="subtitle" style="margin-bottom:.6rem">Instellingen</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem" id="lobby-settings-preview"></div>
+  </div>
+
   <button class="btn btn-primary" onclick="startGame()">Spel starten</button>
 </div>
 
-<!-- ══════════════════════════ NUMBER CARD ══════════════════════════════ -->
+<!-- ══════════════════════ NUMBER CARD ══════════════════════ -->
 <div class="screen" id="s-number">
-  <div class="row"><button class="btn-back" onclick="go('s-lobby')">← Lobby</button><h2>Jouw nummer</h2></div>
-  <div class="card" style="align-items:center">
-    <div class="player-number-card" id="number-card-inner">
-      <div style="font-size:.8rem;font-weight:500;color:#555;text-transform:uppercase;letter-spacing:2px">HUNTER</div>
-      <div class="player-big-number" id="player-big-num">12345</div>
-      <div class="player-number-name" id="player-num-name">Daan</div>
-      <div class="number-hearts" id="number-hearts"></div>
-      <div class="player-number-team" id="player-num-team" style="display:none"></div>
-    </div>
-    <div class="number-print-hint">Print dit uit op A4 — plak op je rug<br><span style="color:var(--accent)">Zo groot mogelijk printen voor zichtbaarheid!</span></div>
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-lobby')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Lobby
+    </button>
   </div>
-  <button class="btn btn-secondary" onclick="window.print()">Afdrukken</button>
+  <div class="title">Jouw nummer</div>
+
+  <div class="surface" style="align-items:center;display:flex;flex-direction:column;gap:.5rem;padding:1.5rem">
+    <div class="number-card" id="number-card-inner">
+      <div class="number-card-game">HUNTER</div>
+      <div class="number-big" id="player-big-num">12345</div>
+      <div class="number-name" id="player-num-name">Daan</div>
+      <div id="number-hearts" style="display:flex;gap:3px;margin-top:2px"></div>
+      <div id="player-num-team" style="display:none"></div>
+    </div>
+    <div class="body-sm" style="text-align:center;margin-top:.25rem">
+      Print dit op A4 — plak op je rug<br>
+      <span style="color:var(--rose);font-size:.8rem">Zo groot mogelijk voor maximale zichtbaarheid</span>
+    </div>
+  </div>
+
+  <button class="btn btn-ghost" onclick="window.print()">Afdrukken</button>
   <button class="btn btn-primary" onclick="go('s-game')">Naar de kaart</button>
 </div>
 
-<!-- ═══════════════════════════════ GAME ═══════════════════════════════ -->
+<!-- ══════════════════════ GAME ══════════════════════ -->
 <div class="screen" id="s-game">
+  <!-- HEADER -->
   <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
     <div>
-      <button class="btn-back" onclick="go('s-home')" style="margin-bottom:3px">← Home</button>
-      <h3 id="g-area">Centrum Helmond</h3>
-      <div style="display:flex;gap:.35rem;align-items:center;margin-top:2px;flex-wrap:wrap">
+      <button class="btn-back" onclick="go('s-home')">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+        Home
+      </button>
+      <div style="display:flex;gap:.35rem;align-items:center;margin-top:4px;flex-wrap:wrap">
         <span class="badge badge-alive" id="g-status">Alive</span>
         <span id="g-team-badge" style="display:none"></span>
-        <span id="g-hearts" style="font-size:.85rem"></span>
+        <span id="g-hearts" style="font-size:.82rem"></span>
       </div>
+      <div id="g-area" style="font-size:.65rem;color:var(--zinc-500);margin-top:2px;letter-spacing:.3px"></div>
     </div>
-    <div>
-      <div class="nav-tabs">
-        <button class="nav-tab active" id="tab-map" onclick="switchTab('map')">Kaart</button>
-        <button class="nav-tab" id="tab-enter" onclick="switchTab('enter')">Nummer</button>
-        <button class="nav-tab" id="tab-lb" onclick="switchTab('lb')">Score</button>
-      </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-map" onclick="switchTab('map')">Kaart</button>
+      <button class="nav-tab" id="tab-enter" onclick="switchTab('enter')">Nummer</button>
+      <button class="nav-tab" id="tab-lb" onclick="switchTab('lb')">Score</button>
     </div>
   </div>
 
-  <div class="pulse-bar">
-    <div class="pbar-item" title="Elke paar minuten zijn alle spelers kort zichtbaar op de kaart"><div class="lbl">⚡ Pulse over</div><div class="val" style="color:var(--accent3)" id="pulse-cd">9:47</div></div>
-    <div class="pbar-div"></div>
-    <div class="pbar-item" title="Sta in de groene zone om een power-up te verdienen"><div class="lbl">🎁 In zone</div><div class="val" style="color:var(--accent2)" id="zone-cd">—</div></div>
-    <div class="pbar-div"></div>
-    <div class="pbar-item" title="De groene power-up zone verplaatst zich periodiek"><div class="lbl">📍 Zone rot.</div><div class="val" style="color:var(--muted)" id="zone-rot-cd">14:32</div></div>
-    <div class="pbar-div"></div>
-    <div class="pbar-item"><div class="lbl">⏱️ Speltijd</div><div class="val" style="color:var(--text)" id="game-time-cd">60:00</div></div>
+  <!-- TIMER BAR -->
+  <div class="timer-bar">
+    <div class="timer-cell" title="Elke paar minuten zijn alle spelers kort zichtbaar op de kaart">
+      <div class="lbl">Pulse</div>
+      <div class="val" style="color:var(--rose)" id="pulse-cd">9:47</div>
+    </div>
+    <div class="timer-divider"></div>
+    <div class="timer-cell" title="Sta in een zone om een power-up te verdienen">
+      <div class="lbl">In zone</div>
+      <div class="val" style="color:var(--emerald)" id="zone-cd">—</div>
+    </div>
+    <div class="timer-divider"></div>
+    <div class="timer-cell" title="Power-up zone verplaatst zich periodiek">
+      <div class="lbl">Zone rot.</div>
+      <div class="val" style="color:var(--zinc-400)" id="zone-rot-cd">14:32</div>
+    </div>
+    <div class="timer-divider"></div>
+    <div class="timer-cell">
+      <div class="lbl">Speltijd</div>
+      <div class="val" id="game-time-cd">60:00</div>
+    </div>
   </div>
 
-  <div id="outside-warn" class="outside-warn">⚠️ Buiten de zone! Keer terug. (<span id="outside-timer">2:00</span>)</div>
-  <div id="grace-banner" style="background:#1a2a3a;border:1px solid #4a8af4;border-radius:10px;padding:.55rem .85rem;font-size:.85rem;color:#4a8af4;text-align:center;display:none">
-    🛡️ Grace period — niemand kan geëlimineerd worden. Verstoppen maar! <strong id="grace-timer">5:00</strong>
-  </div>
+  <!-- ALERTS -->
+  <div id="outside-warn" class="alert alert-danger">Buiten de zone — keer terug! (<span id="outside-timer">2:00</span>)</div>
+  <div id="grace-banner" class="alert alert-info">Grace period — niemand kan geëlimineerd worden. Verstoppen! <strong id="grace-timer">5:00</strong></div>
 
-  <div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:.68rem;color:var(--muted)">Speelzone</span><span style="font-size:.68rem;color:var(--accent3)" id="zone-pct">100%</span></div><div class="zone-shrink-bar"><div class="zone-shrink-fill" id="zone-shrink-fill" style="width:100%"></div></div></div>
+  <!-- ZONE SHRINK -->
+  <div class="zone-bar-wrap">
+    <div class="zone-bar-row">
+      <span class="zone-bar-lbl">Speelzone</span>
+      <span class="zone-bar-pct" id="zone-pct">100%</span>
+    </div>
+    <div class="zone-bar-track"><div class="zone-bar-fill" id="zone-shrink-fill" style="width:100%"></div></div>
+  </div>
 
   <!-- MAP TAB -->
   <div id="tab-map-content">
     <div class="map-wrap"><div id="leafmap"></div></div>
-    <div class="stats-row">
-      <div class="stat-box"><div class="stat-num" id="g-alive">—</div><div class="stat-label">Alive</div></div>
-      <div class="stat-box"><div class="stat-num" id="g-kills">0</div><div class="stat-label">Kills</div></div>
-      <div class="stat-box"><div class="stat-num" id="g-teams-alive">—</div><div class="stat-label">Teams</div></div>
-      <div class="stat-box"><div class="stat-num" id="g-place">1</div><div class="stat-label">Positie</div></div>
+    <div class="stat-grid">
+      <div class="stat-cell"><div class="stat-num" id="g-alive">—</div><div class="stat-lbl">Alive</div></div>
+      <div class="stat-cell"><div class="stat-num" id="g-kills">0</div><div class="stat-lbl">Kills</div></div>
+      <div class="stat-cell"><div class="stat-num" id="g-teams-alive">—</div><div class="stat-lbl">Teams</div></div>
+      <div class="stat-cell"><div class="stat-num" id="g-place">1</div><div class="stat-lbl">Positie</div></div>
     </div>
-    <div class="card" style="gap:.55rem;display:flex;flex-direction:column">
-      <h3>Power-ups (max 2) — tik voor uitleg</h3>
-      <div class="pu-slots" id="pu-slots"></div>
+    <div class="surface" style="display:flex;flex-direction:column;gap:.6rem">
+      <div class="subtitle">Power-ups — tik voor uitleg</div>
+      <div class="pu-grid" id="pu-slots"></div>
     </div>
-    <div class="action-bar">
-      <button class="btn-scan" onclick="switchTab('enter')">Nummer invoeren</button>
-      <button class="btn-act" onclick="go('s-number')">Mijn nummer</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <button class="btn btn-primary" onclick="switchTab('enter')">Nummer invoeren</button>
+      <button class="btn btn-ghost" onclick="go('s-number')">Mijn nummer</button>
     </div>
   </div>
 
   <!-- ENTER NUMBER TAB -->
   <div id="tab-enter-content" style="display:none">
-    <div class="card" style="display:flex;flex-direction:column;gap:.75rem">
-      <h3>Voer het nummer van je doelwit in</h3>
-      <input class="number-input-big" id="target-number" type="tel" maxlength="5" placeholder="_ _ _ _ _" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
-      <div style="font-size:.8rem;color:var(--muted);text-align:center">Typ het 5-cijferig nummer dat op de rug van je tegenstander staat</div>
-      <button class="btn btn-primary" onclick="doEliminate()">Elimineer!</button>
+    <div class="surface" style="display:flex;flex-direction:column;gap:.75rem">
+      <div class="subtitle">Nummer van je doelwit</div>
+      <input class="target-input" id="target-number" type="tel" maxlength="5" placeholder="_ _ _ _ _" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
+      <div class="input-hint" style="text-align:center">Typ het 5-cijferig nummer van de rug van je tegenstander</div>
+      <button class="btn btn-primary" onclick="doEliminate()">Elimineer</button>
     </div>
-    <div class="card"><h3 style="margin-bottom:.45rem">Jouw power-ups</h3><div class="pu-slots" id="pu-slots-enter"></div></div>
-    <div class="card" style="text-align:center;padding:1.25rem">
-      <div style="font-size:.8rem;color:var(--muted);margin-bottom:.5rem">Jouw nummer (voor als iemand jou wil typen)</div>
-      <div style="font-family:var(--fn);font-size:3rem;letter-spacing:8px;color:var(--accent)" id="my-number-display">—</div>
+    <div class="surface" style="margin-top:.5rem">
+      <div class="subtitle" style="margin-bottom:.55rem">Jouw power-ups</div>
+      <div class="pu-grid" id="pu-slots-enter"></div>
+    </div>
+    <div class="surface" style="margin-top:.5rem;text-align:center;padding:1.25rem">
+      <div class="input-hint" style="margin-bottom:.4rem">Jouw eigen nummer</div>
+      <div class="mono" style="font-size:2.8rem;font-weight:700;letter-spacing:8px;color:var(--zinc-50)" id="my-number-display">—</div>
     </div>
   </div>
 
-  <!-- LEADERBOARD TAB -->
+  <!-- LB TAB -->
   <div id="tab-lb-content" style="display:none"><div id="lb-list"></div></div>
 </div>
 
-<!-- ═══════════════════════════════ ADMIN ═══════════════════════════════ -->
+<!-- ══════════════════════ ADMIN ══════════════════════ -->
 <div class="screen" id="s-admin">
-  <div class="row"><button class="btn-back" onclick="go('s-home')">← Home</button><h2 style="flex:1">Admin</h2><span style="font-size:.72rem;color:var(--accent3);border:1px solid var(--accent3);border-radius:6px;padding:3px 8px">HOST</span></div>
-  <div class="card"><h3 style="margin-bottom:.55rem">Spelers beheren</h3><div id="admin-list"></div></div>
-  <div class="card"><h3 style="margin-bottom:.55rem">Spel beheren</h3>
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-home')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Home
+    </button>
+    <span class="badge badge-host screen-header-right">HOST</span>
+  </div>
+  <div class="title">Admin</div>
+
+  <div class="surface">
+    <div class="subtitle" style="margin-bottom:.65rem">Spelers</div>
+    <div id="admin-list"></div>
+  </div>
+
+  <div class="surface">
+    <div class="subtitle" style="margin-bottom:.65rem">Spel beheren</div>
     <div style="display:flex;flex-direction:column;gap:.45rem">
-      <button class="btn btn-secondary" onclick="adminTriggerPulse()">Forceer pulse nu</button>
-      <button class="btn btn-secondary" onclick="adminRotateZone()">Roteer power-up zone</button>
+      <button class="btn btn-ghost" onclick="adminTriggerPulse()">Forceer pulse nu</button>
+      <button class="btn btn-ghost" onclick="adminRotateZone()">Roteer power-up zone</button>
       <button class="btn btn-danger" onclick="adminEndGame()">Spel beëindigen</button>
     </div>
   </div>
-  <div class="card"><h3 style="margin-bottom:.45rem">Live log</h3><div id="admin-log" style="font-size:.75rem;color:var(--muted);display:flex;flex-direction:column;gap:.2rem;max-height:120px;overflow-y:auto"></div></div>
+
+  <div class="surface">
+    <div class="subtitle" style="margin-bottom:.5rem">Live log</div>
+    <div id="admin-log" style="font-size:.75rem;color:var(--zinc-500);display:flex;flex-direction:column;gap:.2rem;max-height:120px;overflow-y:auto;font-family:var(--f-mono)"></div>
+  </div>
 </div>
 
-<!-- ═══════════════════════════════ ELIMINATED ═══════════════════════════════ -->
+<!-- ══════════════════════ ELIMINATED ══════════════════════ -->
 <div class="screen" id="s-elim">
-  <div class="row"><button class="btn-back" onclick="go('s-home')">← Home</button></div>
-  <div style="text-align:center;margin-top:2rem">
-    <div class="elim-big">GEËLIMINEERD</div>
-    <div style="color:var(--muted);margin-top:.35rem">Je bent uit het spel</div>
-    <div style="font-size:1rem;margin-top:.65rem">Kills: <span id="elim-kills" style="color:var(--accent);font-family:var(--fn);font-size:1.3rem">0</span></div>
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-home')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Home
+    </button>
   </div>
-  <div class="card"><h3 style="margin-bottom:.35rem">Spectator modus</h3><div style="font-size:.8rem;color:var(--muted);margin-bottom:.55rem">Volg het spel mee op de kaart</div><button class="btn btn-secondary" onclick="go('s-game')">Kaart bekijken</button></div>
-  <button class="btn btn-secondary" onclick="go('s-home')">Terug naar home</button>
+
+  <div class="elim-display">
+    <div class="elim-icon">
+      <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="var(--rose)" stroke-width="2"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+    </div>
+    <div class="elim-title">Geëlimineerd</div>
+    <div class="body-sm">Je bent uit het spel</div>
+    <div style="margin-top:.5rem">
+      <div class="subtitle" style="margin-bottom:.25rem">Kills</div>
+      <div class="elim-kills" id="elim-kills">0</div>
+    </div>
+  </div>
+
+  <div class="surface">
+    <div style="font-weight:600;color:var(--zinc-200);margin-bottom:.3rem">Spectator modus</div>
+    <div class="body-sm" style="margin-bottom:.65rem">Volg het spel mee op de kaart</div>
+    <button class="btn btn-ghost" onclick="go('s-game')">Kaart bekijken</button>
+  </div>
+  <button class="btn btn-ghost" onclick="go('s-home')">Terug naar home</button>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-// FIREBASE CONFIGURATIE
-// Vervang onderstaande waarden met jouw Firebase project data
-// Zie stappenplan in de README
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyB0N-7p6Dlrp5NFl8bKasLI3kV9CrZ9hr4",
   authDomain: "hunter-the-game.firebaseapp.com",
@@ -471,7 +884,7 @@ const FIREBASE_CONFIG = {
   appId: "1:1030974292754:web:e5047e2aa0b4e0917c29cb"
 };
 
-let firebaseApp = null, db = null, lobbyRef = null;
+let firebaseApp=null, db=null, lobbyRef=null;
 const DEMO_MODE = FIREBASE_CONFIG.apiKey === "JOUW_API_KEY";
 
 function initFirebase() {
@@ -487,38 +900,46 @@ function updateFBStatus(connected) {
   const dot = document.getElementById('fb-dot-home');
   const txt = document.getElementById('fb-text-home');
   if (!dot) return;
-  if (DEMO_MODE) { dot.className='fb-dot demo'; txt.textContent='Demo modus — configureer Firebase voor multiplayer'; return; }
-  dot.className='fb-dot '+(connected?'connected':'disconnected');
-  txt.textContent=connected?'Firebase verbonden — multiplayer actief':'Firebase verbinding mislukt';
+  if (DEMO_MODE) { dot.className='dot dot-amber dot-pulse'; txt.textContent='Demo modus — configureer Firebase voor multiplayer'; return; }
+  dot.className='dot '+(connected?'dot-green':'dot-red');
+  txt.textContent = connected ? 'Firebase verbonden — multiplayer actief' : 'Firebase verbinding mislukt';
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // CONSTANTS
-// ═══════════════════════════════════════════════════════════
-let CENTER = {lat:51.4816, lng:5.6542}; // will be set from GPS
-let MAX_RADIUS = 400; // meters, set by host
+// ══════════════════════════════════════════════════════
+let CENTER = {lat:51.4816, lng:5.6542};
+let MAX_RADIUS = 400;
 
 const TEAM_COLORS = [
-  {name:'Rood',  border:'#f44a7a', fill:'rgba(244,74,122,0.12)', dot:'#f44a7a', badge:'background:#3a1a2a;color:#f44a7a'},
-  {name:'Blauw', border:'#4a8af4', fill:'rgba(74,138,244,0.12)',  dot:'#4a8af4', badge:'background:#1a1e3a;color:#4a8af4'},
-  {name:'Groen', border:'#4af4a0', fill:'rgba(74,244,160,0.12)',  dot:'#4af4a0', badge:'background:#1a3a2a;color:#4af4a0'},
-  {name:'Geel',  border:'#e8f44a', fill:'rgba(232,244,74,0.12)', dot:'#e8f44a', badge:'background:#2a2a10;color:#e8f44a'},
+  {name:'Rood',  border:'#f43f5e', fill:'rgba(244,63,94,0.1)',   dot:'#f43f5e', badge:'background:rgba(244,63,94,0.12);color:#f43f5e'},
+  {name:'Blauw', border:'#3b82f6', fill:'rgba(59,130,246,0.1)',  dot:'#3b82f6', badge:'background:rgba(59,130,246,0.12);color:#3b82f6'},
+  {name:'Groen', border:'#10b981', fill:'rgba(16,185,129,0.1)',  dot:'#10b981', badge:'background:rgba(16,185,129,0.12);color:#10b981'},
+  {name:'Amber', border:'#f59e0b', fill:'rgba(245,158,11,0.1)',  dot:'#f59e0b', badge:'background:rgba(245,158,11,0.12);color:#f59e0b'},
 ];
 
 const ALL_POWERUPS = {
-  shield:   {icon:'🛡️', name:'Schild',       desc:'Je overleeft de volgende eliminatiepoging.'},
-  piercing: {icon:'🎯', name:'Piercing shot', desc:'Elimineer iemand ondanks hun schild.'},
-  radar:    {icon:'📡', name:'Radar',         desc:'Zie 1 willekeurige speler 60s live op de kaart.'},
-  invisible:{icon:'👻', name:'Onzichtbaar',   desc:'Je bent onzichtbaar tijdens de volgende pulse.'},
-  decoy:    {icon:'📍', name:'Lokaas',        desc:'Stuur een nep-locatie naar alle spelers.'},
-  revive:   {icon:'💚', name:'Revive',        desc:'Haal een geëlimineerde teamgenoot terug. (Alleen teams)', teamsOnly:true},
+  shield:   {icon:'S', name:'Schild',       desc:'Je overleeft de volgende eliminatiepoging.'},
+  piercing: {icon:'P', name:'Piercing shot', desc:'Elimineer iemand ondanks hun schild.'},
+  radar:    {icon:'R', name:'Radar',         desc:'Zie 1 willekeurige speler 60s live op de kaart.'},
+  invisible:{icon:'I', name:'Onzichtbaar',   desc:'Je bent onzichtbaar tijdens de volgende pulse.'},
+  decoy:    {icon:'D', name:'Lokaas',        desc:'Stuur een nep-locatie naar alle spelers.'},
+  revive:   {icon:'V', name:'Revive',        desc:'Haal een geëlimineerde teamgenoot terug. (Alleen teams)', teamsOnly:true},
 };
 
-// PU zone positions are generated dynamically from CENTER in getPUZonePositions()
+// Icons as SVG paths for anti-emoji compliance
+const PU_ICONS = {
+  shield:   `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>`,
+  piercing: `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>`,
+  radar:    `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304-.001a3.75 3.75 0 010 5.304m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.547M11.25 12h.008v.008H11.25V12z"/></svg>`,
+  invisible:`<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>`,
+  decoy:    `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>`,
+  revive:   `<svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`,
+};
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // GAME STATE
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 let CFG = {
   gameDurMin:60, pulseIntervalMin:10, zoneRotMin:15, zoneTimeMin:5, shrinkPct:25,
   mode:'ffa', numTeams:2, teamSize:4, teamNames:['Team Rood','Team Blauw'],
@@ -541,153 +962,171 @@ let G = {
   adminLog:[],
 };
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // HELPERS
-// ═══════════════════════════════════════════════════════════
-function allPlayers() {
-  return G.teams.flatMap((t,ti) => t.players.map(p => ({...p, team:t.name, teamIdx:ti})));
-}
-function getEnabledPUs() {
-  return Object.keys(ALL_POWERUPS).filter(k => CFG.enabledPU[k] && (k!=='revive' || CFG.mode==='teams'));
-}
-function generatePlayerNumber(idx) {
-  // Generates a unique 5-digit number per player index
-  const base = 10000 + idx * 7 + Math.floor(Math.random() * 100);
-  return String(base).slice(0,5).padStart(5,'0');
-}
+// ══════════════════════════════════════════════════════
+function allPlayers(){return G.teams.flatMap((t,ti)=>t.players.map(p=>({...p,team:t.name,teamIdx:ti})));}
+function getEnabledPUs(){return Object.keys(ALL_POWERUPS).filter(k=>CFG.enabledPU[k]&&(k!=='revive'||CFG.mode==='teams'));}
+function generatePlayerNumber(idx){const base=10000+idx*7+Math.floor(Math.random()*100);return String(base).slice(0,5).padStart(5,'0');}
+
 function go(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
   if (id==='s-game') {
-    setTimeout(()=>{ if(!map) initMap(); else map.invalidateSize(); }, 300);
-    setTimeout(()=>{ if(map) map.invalidateSize(); }, 800);
+    setTimeout(()=>{if(!map)initMap();else map.invalidateSize();},300);
+    setTimeout(()=>{if(map)map.invalidateSize();},800);
   }
   if (id==='s-admin') renderAdmin();
   if (id==='s-rules') renderRulesPU();
   if (id==='s-number') renderNumberCard();
 }
+
 function toast(msg, type='') {
-  const c = document.getElementById('toasts');
-  const t = document.createElement('div');
-  t.className = 'toast '+type; t.textContent = msg; c.appendChild(t);
-  setTimeout(() => t.classList.add('show'), 10);
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 2800);
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className='toast '+type; t.textContent=msg; c.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},2800);
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // AUDIO
-// ═══════════════════════════════════════════════════════════
-function playSound(type) {
-  try {
-    const ctx = new(window.AudioContext||window.webkitAudioContext)();
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
+// ══════════════════════════════════════════════════════
+function playSound(type){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
     if(type==='pulse'){o.frequency.setValueAtTime(880,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(220,ctx.currentTime+.6);g.gain.setValueAtTime(.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.7);o.start();o.stop(ctx.currentTime+.7);}
     else if(type==='zone'){o.type='sine';[440,554,659].forEach((f,i)=>o.frequency.setValueAtTime(f,ctx.currentTime+i*.15));g.gain.setValueAtTime(.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.55);o.start();o.stop(ctx.currentTime+.55);}
     else if(type==='kill'){o.type='square';o.frequency.setValueAtTime(200,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(60,ctx.currentTime+.3);g.gain.setValueAtTime(.15,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.35);o.start();o.stop(ctx.currentTime+.35);}
     else if(type==='powerup'){[523,659,784,1046].forEach((f,i)=>{const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.frequency.value=f;g2.gain.setValueAtTime(.15,ctx.currentTime+i*.1);g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.1+.15);o2.start(ctx.currentTime+i*.1);o2.stop(ctx.currentTime+i*.1+.2);});return;}
     else if(type==='eliminated'){o.type='sawtooth';o.frequency.setValueAtTime(300,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(50,ctx.currentTime+1);g.gain.setValueAtTime(.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+1.1);o.start();o.stop(ctx.currentTime+1.1);}
-  } catch(e) {}
+  }catch(e){}
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // UI RENDERERS
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 function renderHearts(el, lives, maxLives) {
   if (!el) return;
-  el.innerHTML = Array.from({length:maxLives}, (_,i) => `<span style="opacity:${i<lives?1:.2}">❤️</span>`).join('');
+  el.innerHTML = Array.from({length:maxLives},(_,i)=>`<svg width="14" height="14" viewBox="0 0 24 24" fill="${i<lives?'#f43f5e':'#3f3f46'}" style="opacity:${i<lives?1:.3}"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`).join('');
 }
 
 function renderNumberCard() {
-  const el = document.getElementById('player-big-num');
-  if (el) el.textContent = G.playerNumber || '—';
-  const nameEl = document.getElementById('player-num-name');
-  if (nameEl) nameEl.textContent = G.name;
-  renderHearts(document.getElementById('number-hearts'), G.lives, G.maxLives);
-  const tb = document.getElementById('player-num-team');
-  if (tb) {
-    if (CFG.mode==='teams' && G.teams[G.myTeam]) {
-      const tc = TEAM_COLORS[G.teams[G.myTeam].color];
-      tb.style.cssText = tc.badge+';padding:4px 16px;border-radius:20px;font-size:.85rem;font-weight:500';
-      tb.textContent = G.teams[G.myTeam].name; tb.style.display='block';
+  const el=document.getElementById('player-big-num'); if(el) el.textContent=G.playerNumber||'—';
+  const nameEl=document.getElementById('player-num-name'); if(nameEl) nameEl.textContent=G.name;
+  renderHearts(document.getElementById('number-hearts'),G.lives,G.maxLives);
+  const tb=document.getElementById('player-num-team');
+  if(tb){
+    if(CFG.mode==='teams'&&G.teams[G.myTeam]){
+      const tc=TEAM_COLORS[G.teams[G.myTeam].color];
+      tb.style.cssText=tc.badge+';padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:600;margin-top:3px';
+      tb.textContent=G.teams[G.myTeam].name; tb.style.display='block';
     } else tb.style.display='none';
   }
-  const nd = document.getElementById('my-number-display');
-  if (nd) nd.textContent = G.playerNumber || '—';
+  const nd=document.getElementById('my-number-display'); if(nd) nd.textContent=G.playerNumber||'—';
 }
 
 function renderPUToggles() {
-  const el = document.getElementById('pu-toggles'); if (!el) return;
-  el.innerHTML = Object.entries(ALL_POWERUPS).map(([k,v]) => {
-    const tag = v.teamsOnly ? '<span style="font-size:.68rem;color:var(--accent3);margin-left:.3rem">teams only</span>' : '';
+  const el=document.getElementById('pu-toggles'); if(!el) return;
+  el.innerHTML=Object.entries(ALL_POWERUPS).map(([k,v])=>{
+    const tag=v.teamsOnly?`<span style="font-size:.65rem;color:var(--amber);font-weight:600;margin-left:.35rem">teams only</span>`:'';
     return `<div class="pu-toggle-row">
-      <div><span>${v.icon}</span> <span style="font-size:.88rem;font-weight:500">${v.name}</span>${tag}<br><span style="font-size:.72rem;color:var(--muted)">${v.desc}</span></div>
-      <label class="toggle"><input type="checkbox" id="pu-tog-${k}" ${CFG.enabledPU[k]?'checked':''} onchange="CFG.enabledPU['${k}']=this.checked"><span class="toggle-slider"></span></label>
+      <div class="pu-toggle-info">
+        <div class="pu-toggle-name">${v.name}${tag}</div>
+        <div class="pu-toggle-desc">${v.desc}</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="pu-tog-${k}" ${CFG.enabledPU[k]?'checked':''} onchange="CFG.enabledPU['${k}']=this.checked">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
     </div>`;
   }).join('');
 }
 
 function renderRulesPU() {
-  const el = document.getElementById('rules-pu-list'); if (!el) return;
-  el.innerHTML = Object.entries(ALL_POWERUPS).map(([k,v]) => `
-    <div style="display:flex;gap:.6rem;align-items:flex-start;padding:.4rem 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:1.1rem">${v.icon}</span>
-      <div><div style="font-weight:500;font-size:.88rem">${v.name}${v.teamsOnly?' <span style="font-size:.7rem;color:var(--accent3)">(teams only)</span>':''}</div><div style="font-size:.8rem;color:var(--muted)">${v.desc}</div></div>
+  const el=document.getElementById('rules-pu-list'); if(!el) return;
+  el.innerHTML=Object.entries(ALL_POWERUPS).map(([k,v])=>`
+    <div class="pu-detail-row">
+      <div class="pu-detail-icon">${PU_ICONS[k]||''}</div>
+      <div>
+        <div class="pu-detail-name">${v.name}${v.teamsOnly?` <span style="font-size:.65rem;color:var(--amber)">(teams only)</span>`:''}</div>
+        <div class="pu-detail-desc">${v.desc}</div>
+      </div>
     </div>`).join('');
 }
 
 function renderPU() {
-  ['pu-slots','pu-slots-enter'].forEach(id => {
-    const el = document.getElementById(id); if (!el) return;
-    el.innerHTML = [0,1].map(i => {
-      const pw = G.powerups[i];
-      if (pw && ALL_POWERUPS[pw]) return `<div class="pu-slot filled" onclick="handlePUClick(${i},event)"><div class="pu-icon">${ALL_POWERUPS[pw].icon}</div><div class="pu-name">${ALL_POWERUPS[pw].name}</div></div>`;
-      return `<div class="pu-slot empty"><div class="pu-icon">+</div><div class="pu-name">Leeg</div></div>`;
+  ['pu-slots','pu-slots-enter'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    el.innerHTML=[0,1].map(i=>{
+      const pw=G.powerups[i];
+      if(pw&&ALL_POWERUPS[pw]) return `<div class="pu-slot filled" onclick="handlePUClick(${i},event)" style="color:var(--rose)">
+        <div class="pu-icon-lg">${PU_ICONS[pw]||''}</div>
+        <div class="pu-label">${ALL_POWERUPS[pw].name}</div>
+      </div>`;
+      return `<div class="pu-slot empty">
+        <div style="color:var(--zinc-700)"><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M12 4v16M4 12h16"/></svg></div>
+        <div class="pu-label">Leeg</div>
+      </div>`;
     }).join('');
   });
 }
 
-let puClickState = {};
-function handlePUClick(idx, event) {
-  const pw = G.powerups[idx]; if (!pw) return;
-  if (puClickState[idx]===pw) { usePU(idx); }
-  else { puClickState[idx]=pw; showPUTooltip(idx, event); }
+let puClickState={};
+function handlePUClick(idx,event){
+  const pw=G.powerups[idx]; if(!pw) return;
+  if(puClickState[idx]===pw){usePU(idx);}
+  else{puClickState[idx]=pw;showPUTooltip(idx,event);}
 }
-function showPUTooltip(idx, event) {
-  const pw = G.powerups[idx]; if (!pw) return;
-  const tt = document.getElementById('pu-tooltip'); if (!tt) return;
-  const info = ALL_POWERUPS[pw];
-  tt.innerHTML = `<strong>${info.icon} ${info.name}</strong><br><span style="color:var(--muted)">${info.desc}</span><br><span style="font-size:.72rem;color:var(--accent);display:block;margin-top:4px">Tik nogmaals om te gebruiken</span>`;
-  const x = Math.min(event.clientX, window.innerWidth-230);
-  tt.style.left = x+'px'; tt.style.top = (event.clientY-100)+'px';
+function showPUTooltip(idx,event){
+  const pw=G.powerups[idx]; if(!pw) return;
+  const tt=document.getElementById('pu-tooltip'); if(!tt) return;
+  const info=ALL_POWERUPS[pw];
+  tt.innerHTML=`<div style="font-weight:700;color:var(--zinc-100);margin-bottom:4px">${info.name}</div><div style="color:var(--zinc-400);font-size:.78rem">${info.desc}</div><div style="font-size:.7rem;color:var(--rose);margin-top:6px;font-weight:600">Tik nogmaals om te gebruiken</div>`;
+  const x=Math.min(event.clientX,window.innerWidth-230);
+  tt.style.left=x+'px'; tt.style.top=(event.clientY-110)+'px';
   tt.classList.add('show');
-  setTimeout(() => tt.classList.remove('show'), 3000);
+  setTimeout(()=>tt.classList.remove('show'),3000);
 }
-function usePU(idx) {
-  const pw = G.powerups[idx]; if (!pw) return;
-  if (pw==='revive') { useRevive(idx); return; }
-  toast(ALL_POWERUPS[pw].icon+' '+ALL_POWERUPS[pw].name+' geactiveerd!','green');
+function showPUMapPopup(key,color){
+  const pw=ALL_POWERUPS[key]; if(!pw) return;
+  const svgLg=(PU_ICONS[key]||'').replace(/width="\d+"/,'width="32"').replace(/height="\d+"/,'height="32"');
+  document.getElementById('pu-map-popup-icon').innerHTML=`<div style="color:${color}">${svgLg}</div>`;
+  const nameEl=document.getElementById('pu-map-popup-name');
+  nameEl.textContent=pw.name; nameEl.style.color=color;
+  document.getElementById('pu-map-popup-desc').textContent=pw.desc;
+  document.getElementById('pu-map-popup').style.display='flex';
+}
+function closePUMapPopup(){document.getElementById('pu-map-popup').style.display='none';}
+
+function usePU(idx){
+  const pw=G.powerups[idx]; if(!pw) return;
+  if(pw==='revive'){useRevive(idx);return;}
+  toast(ALL_POWERUPS[pw].name+' geactiveerd!','green');
   playSound('powerup'); addLog('Power-up gebruikt: '+ALL_POWERUPS[pw].name);
   G.powerups[idx]=null; puClickState[idx]=null; renderPU();
 }
-function useRevive(idx) {
-  const deadMates = G.teams[G.myTeam]?.players.filter(p => !p.alive && p.name!==G.name);
-  if (!deadMates || deadMates.length===0) { toast('Geen teamgenoten om te reviven','red'); return; }
+function useRevive(idx){
+  const deadMates=G.teams[G.myTeam]?.players.filter(p=>!p.alive&&p.name!==G.name);
+  if(!deadMates||deadMates.length===0){toast('Geen teamgenoten om te reviven','red');return;}
   deadMates[0].alive=true; deadMates[0].lives=1;
-  toast('💚 '+deadMates[0].name+' herleefd!','green');
+  toast(deadMates[0].name+' herleefd!','green');
   playSound('powerup'); addLog('Revive op '+deadMates[0].name);
   G.powerups[idx]=null; puClickState[idx]=null; updAlive(); renderPU();
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // CREATE / JOIN / LOBBY
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 let selMode='ffa', selNumTeams=2, selTeamSize=4;
 function setMode(m){
   selMode=m;
   ['ffa','teams'].forEach(x=>document.getElementById('mode-'+x).classList.toggle('active',x===m));
-  document.getElementById('team-options').style.display=m==='teams'?'block':'none';
+  document.getElementById('team-options').style.display=m==='teams'?'flex':'none';
   const desc=document.getElementById('mode-desc');
   if(desc)desc.textContent=m==='ffa'?'Iedereen speelt voor zichzelf. De laatste speler die nog leeft wint.':'Spelers worden ingedeeld in teams. Het team dat als laatste nog spelers heeft wint.';
   renderPUToggles();
@@ -697,11 +1136,12 @@ function setTeamSize(n){selTeamSize=n;[2,3,4,5,6,8,10,15].forEach(x=>document.ge
 function updTeamNames(){const el=document.getElementById('team-name-inputs');if(!el)return;const cur=Array.from(el.querySelectorAll('input')).map(i=>i.value);el.innerHTML='';for(let i=0;i<selNumTeams;i++){const def='Team '+TEAM_COLORS[i].name;const inp=document.createElement('input');inp.value=cur[i]||def;el.appendChild(inp);}}
 function updTeamSummary(){const el=document.getElementById('team-summary');if(el)el.textContent=selNumTeams+' teams × '+selTeamSize+' spelers = '+(selNumTeams*selTeamSize)+' totaal';}
 function updDur(){document.getElementById('cd-lbl').textContent=document.getElementById('cd').value+' min';updSettingsPreview();}
-function updLives(){document.getElementById('s-lives-lbl').textContent=document.getElementById('s-lives').value+' ❤️';updSettingsPreview();}
+function updLives(){document.getElementById('s-lives-lbl').textContent=document.getElementById('s-lives').value;updSettingsPreview();}
 function updOutside(){const v=parseInt(document.getElementById('s-outside').value);document.getElementById('s-outside-lbl').textContent=Math.floor(v/60)+':'+String(v%60).padStart(2,'0');updSettingsPreview();}
 function updGrace(){document.getElementById('s-grace-lbl').textContent=document.getElementById('s-grace').value+' min';updSettingsPreview();}
 function updRadius(){const v=parseInt(document.getElementById('s-radius').value);document.getElementById('s-radius-lbl').textContent=v>=1000?(v/1000).toFixed(1)+' km':v+' m';updSettingsPreview();}
 function updSettings(){['pulse','rot','zone'].forEach(k=>document.getElementById('s-'+k+'-lbl').textContent=document.getElementById('s-'+k).value+' min');document.getElementById('s-shrink-lbl').textContent=document.getElementById('s-shrink').value+'%';updSettingsPreview();}
+
 function updSettingsPreview(){
   const dur=parseInt(document.getElementById('cd').value);
   const pulse=parseInt(document.getElementById('s-pulse').value);
@@ -714,22 +1154,13 @@ function updSettingsPreview(){
   const radius=parseInt(document.getElementById('s-radius').value);
   const outsideStr=Math.floor(outside/60)+':'+String(outside%60).padStart(2,'0');
   const radiusStr=radius>=1000?(radius/1000).toFixed(1)+' km':radius+' m';
-  const el=document.getElementById('settings-preview');
-  if(!el)return;
-  el.innerHTML=
-    `⏱️ Spelduur: <strong>${dur} minuten</strong><br>`+
-    `🛡️ Grace period: <strong>${grace} min</strong> — niemand kan af worden gemaakt<br>`+
-    `🗺️ Speelveld straal: <strong>${radiusStr}</strong> (middelpunt = jouw GPS locatie)<br>`+
-    `❤️ Levens: <strong>${lives} per speler</strong><br>`+
-    `⚡ Pulse: elke <strong>${pulse} min</strong> (~${Math.floor(dur/pulse)}x tijdens het spel)<br>`+
-    `📍 Zone verplaatst: elke <strong>${rot} min</strong><br>`+
-    `🎁 Power-up verdienen: <strong>${zone} min</strong> in de zone staan<br>`+
-    `🔴 Zone krimpt tot <strong>${shrink}%</strong> van de startgrootte<br>`+
-    `🚫 Buiten zone: max <strong>${outsideStr}</strong> voordat je een leven verliest`;
+  const el=document.getElementById('settings-preview'); if(!el) return;
+  const items=[['Duur',dur+' min'],['Grace',grace+' min'],['Straal',radiusStr],['Levens',lives+'x'],['Buiten',outsideStr],['Pulse',pulse+' min'],['Zone rot.',rot+' min'],['Zone PU',zone+' min'],['Krimpt',shrink+'%']];
+  el.innerHTML=items.map(([k,v])=>`<div class="sp-item"><div class="sp-key">${k}</div><div class="sp-val">${v}</div></div>`).join('');
 }
 
-function createLobby() {
-  const n = document.getElementById('cn').value.trim(); if (!n) { toast('Vul naam in'); return; }
+function createLobby(){
+  const n=document.getElementById('cn').value.trim(); if(!n){toast('Vul naam in','red');return;}
   CFG.gameDurMin=parseInt(document.getElementById('cd').value);
   CFG.pulseIntervalMin=parseInt(document.getElementById('s-pulse').value);
   CFG.zoneRotMin=parseInt(document.getElementById('s-rot').value);
@@ -740,419 +1171,402 @@ function createLobby() {
   CFG.gracePeriodMin=parseInt(document.getElementById('s-grace').value);
   CFG.radiusMeters=parseInt(document.getElementById('s-radius').value);
   CFG.mode=selMode; CFG.numTeams=selNumTeams; CFG.teamSize=selTeamSize;
-  const nameInputs = document.getElementById('team-name-inputs');
-  CFG.teamNames = nameInputs ? Array.from(nameInputs.querySelectorAll('input')).map((inp,i)=>inp.value||'Team '+(i+1)) : ['Team Rood','Team Blauw'];
+  const nameInputs=document.getElementById('team-name-inputs');
+  CFG.teamNames=nameInputs?Array.from(nameInputs.querySelectorAll('input')).map((inp,i)=>inp.value||'Team '+(i+1)):['Team Rood','Team Blauw'];
   Object.keys(ALL_POWERUPS).forEach(k=>{const tog=document.getElementById('pu-tog-'+k);if(tog)CFG.enabledPU[k]=tog.checked;});
   G.name=n; G.isHost=true; G.area=document.getElementById('ca').value.trim()||'Speelgebied';
   G.lobby=n.toUpperCase().slice(0,3)+(Math.floor(Math.random()*90)+10);
   G.gameTotalS=CFG.gameDurMin*60; G.pulseS=CFG.pulseIntervalMin*60; G.zoneRotS=CFG.zoneRotMin*60;
   G.lives=CFG.lives; G.maxLives=CFG.lives;
   G.graceRemaining=CFG.gracePeriodMin*60; G.graceActive=true;
-  G.playerNumber = generatePlayerNumber(0);
-  G.num = 0;
-  MAX_RADIUS = CFG.radiusMeters;
+  G.playerNumber=generatePlayerNumber(0); G.num=0;
+  MAX_RADIUS=CFG.radiusMeters;
+  const btn=document.getElementById('create-btn');
+  const skipBtn=document.getElementById('skip-gps-btn');
+  if(btn){btn.textContent='GPS ophalen...';btn.disabled=true;}
 
-  // Try to get GPS location for map center
-  const btn = document.querySelector('#s-create .btn-primary');
-  if (btn) { btn.textContent='📍 GPS ophalen...'; btn.disabled=true; }
+  // Show "skip" button after 3 seconds in case GPS hangs
+  const skipTimer=setTimeout(()=>{
+    if(skipBtn)skipBtn.style.display='block';
+  },3000);
 
-  function finishLobby(lat, lng) {
-    CENTER = {lat, lng};
-    G.gpsLat=lat; G.gpsLng=lng;
-    // Only the host — no fake bots. Joiners are added via Firebase.
-    if (CFG.mode==='teams') {
-      G.teams = CFG.teamNames.slice(0,CFG.numTeams).map((nm,i) => ({
-        name:nm, color:i%4, players:[]
-      }));
-      // Add host to first team
-      G.teams[0].players.push({name:n, number:G.playerNumber, kills:0, alive:true, lives:CFG.lives, isHost:true});
+  function finishLobby(lat,lng){
+    clearTimeout(skipTimer);
+    if(skipBtn)skipBtn.style.display='none';
+    CENTER={lat,lng}; G.gpsLat=lat; G.gpsLng=lng;
+    if(CFG.mode==='teams'){
+      G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
+      G.teams[0].players.push({name:n,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,isHost:true});
       G.myTeam=0;
-    } else {
-      G.teams = [{name:'FFA', color:0, players:[
-        {name:n, number:G.playerNumber, kills:0, alive:true, lives:CFG.lives, isHost:true}
-      ]}];
+    }else{
+      G.teams=[{name:'FFA',color:0,players:[{name:n,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,isHost:true}]}];
     }
     document.getElementById('lc-display').textContent=G.lobby;
     document.getElementById('g-area').textContent=G.area;
-    if (btn) { btn.textContent='Lobby aanmaken'; btn.disabled=false; }
-    if (!DEMO_MODE && db) syncLobbyToFirebase();
-    renderLobbyView(); renderLobbySettings(); go('s-lobby');
+    if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
+    if(!DEMO_MODE&&db)syncLobbyToFirebase();
+    renderLobbyView();renderLobbySettings();go('s-lobby');
   }
-
-  if (navigator.geolocation) {
+  if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
-      pos => finishLobby(pos.coords.latitude, pos.coords.longitude),
-      err => {
-        toast('GPS niet beschikbaar — standaard locatie gebruikt','red');
-        finishLobby(51.4816, 5.6542);
-      },
-      {timeout:8000, maximumAge:30000}
+      pos=>finishLobby(pos.coords.latitude,pos.coords.longitude),
+      ()=>{toast('GPS niet beschikbaar — standaard locatie gebruikt','red');finishLobby(51.4816,5.6542);},
+      {timeout:5000,maximumAge:30000}
     );
-  } else {
-    finishLobby(51.4816, 5.6542);
-  }
+  }else{finishLobby(51.4816,5.6542);}
 }
 
-function joinLobby() {
+// Called when user taps "Overslaan" during GPS hang
+function skipGPS(){
+  toast('Verder zonder GPS — kaart gebruikt standaard locatie');
+  // Trigger the lobby creation with fallback coords
+  // Re-read all settings and call finishLobby directly
+  const btn=document.getElementById('create-btn');
+  const skipBtn=document.getElementById('skip-gps-btn');
+  if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
+  if(skipBtn)skipBtn.style.display='none';
+  // finishLobby is scoped inside createLobby, so we call createLobby
+  // but patch geolocation to immediately fail
+  const origGeo=navigator.geolocation;
+  Object.defineProperty(navigator,'geolocation',{value:{getCurrentPosition:(_,err)=>err({})},configurable:true});
+  createLobby();
+  setTimeout(()=>{try{Object.defineProperty(navigator,'geolocation',{value:origGeo,configurable:true});}catch(e){}},500);
+}
+
+function joinLobby(){
   const n=document.getElementById('jn').value.trim(), c=document.getElementById('jc').value.trim().toUpperCase();
-  if (!n||!c) { toast('Vul naam en code in'); return; }
+  if(!n||!c){toast('Vul naam en code in','red');return;}
   G.name=n; G.lobby=c;
-  G.playerNumber = String(10000+Math.floor(Math.random()*89999));
+  G.playerNumber=String(10000+Math.floor(Math.random()*89999));
   document.getElementById('lc-display').textContent=c;
-  if (!DEMO_MODE && db) {
-    joinLobbyFirebase(c, n);
-  } else {
-    renderLobbyView(); renderLobbySettings();
-  }
+  if(!DEMO_MODE&&db){joinLobbyFirebase(c,n);}
+  else{renderLobbyView();renderLobbySettings();}
   go('s-lobby'); toast('Gejoined!','green');
 }
 
-function renderLobbyView() {
-  const el = document.getElementById('lobby-teams-view'); if (!el) return;
-  document.getElementById('pc').textContent = allPlayers().length;
-  if (CFG.mode==='teams') {
-    el.innerHTML = G.teams.map(t => {
-      const tc = TEAM_COLORS[t.color];
-      return `<div class="team-card" style="border-color:${tc.border};background:${tc.fill};margin-bottom:.4rem">
-        <div style="font-weight:500;color:${tc.border};margin-bottom:.3rem;font-size:.88rem">${t.name} (${t.players.length})</div>
-        ${t.players.map(p=>`<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:2px 0"><span>${p.name}</span><span style="color:var(--muted);font-family:var(--fn);font-size:.95rem">${p.number}</span></div>`).join('')}
+function renderLobbyView(){
+  const el=document.getElementById('lobby-teams-view'); if(!el) return;
+  document.getElementById('pc').textContent=allPlayers().length;
+  const hb=document.getElementById('lobby-host-badge');if(hb)hb.style.display=G.isHost?'inline-flex':'none';
+  if(CFG.mode==='teams'){
+    el.innerHTML=G.teams.map(t=>{
+      const tc=TEAM_COLORS[t.color];
+      return `<div class="team-chip" style="border-color:${tc.border}40;background:${tc.fill};margin-bottom:.45rem">
+        <div style="font-size:.75rem;font-weight:700;color:${tc.border};margin-bottom:.4rem;letter-spacing:.5px;text-transform:uppercase">${t.name} — ${t.players.length} spelers</div>
+        ${t.players.map(p=>`<div style="display:flex;justify-content:space-between;font-size:.82rem;padding:2px 0"><span style="color:var(--zinc-300)">${p.name}</span><span style="font-family:var(--f-mono);color:var(--zinc-500)">${p.number}</span></div>`).join('')}
       </div>`;
     }).join('');
-  } else {
-    el.innerHTML = allPlayers().slice(0,10).map(p => `
-      <div class="player-item" style="display:flex;align-items:center;justify-content:space-between;padding:.55rem .85rem;background:var(--surface2);border-radius:9px;border:1px solid var(--border);margin-bottom:.3rem">
-        <span>${p.name}</span>
-        <span style="font-family:var(--fn);font-size:1.1rem;color:var(--accent)">${p.number}</span>
-      </div>`).join('');
+  }else{
+    el.innerHTML='<div class="surface-flat">'+allPlayers().slice(0,12).map((p,i,arr)=>`
+      <div class="player-row" style="${i===arr.length-1?'border-bottom:none':''}">
+        <span class="player-row-name">${p.name}</span>
+        <span class="player-row-num">${p.number}</span>
+      </div>`).join('')+'</div>';
   }
 }
 
-function renderLobbySettings() {
-  const el = document.getElementById('lobby-settings-preview'); if (!el) return;
-  const radiusStr = CFG.radiusMeters>=1000?(CFG.radiusMeters/1000).toFixed(1)+' km':CFG.radiusMeters+' m';
-  const items = [['Modus',CFG.mode==='ffa'?'Free for all':`${CFG.numTeams}×${CFG.teamSize}`],['Spelduur',CFG.gameDurMin+' min'],['Grace',CFG.gracePeriodMin+' min'],['Speelveld',radiusStr],['Levens',CFG.lives+'❤️'],['Buiten zone',Math.floor(CFG.outsideTimeSec/60)+':'+String(CFG.outsideTimeSec%60).padStart(2,'0')],['Pulse',CFG.pulseIntervalMin+' min'],['Zone rot.',CFG.zoneRotMin+' min']];
-  el.innerHTML = items.map(([k,v]) => `<div style="background:var(--surface2);border-radius:8px;padding:.4rem .65rem;border:1px solid var(--border)"><div style="font-size:.65rem;color:var(--muted)">${k}</div><div style="font-family:var(--fn);font-size:.95rem;color:var(--accent)">${v}</div></div>`).join('');
+function renderLobbySettings(){
+  const el=document.getElementById('lobby-settings-preview'); if(!el) return;
+  const radiusStr=CFG.radiusMeters>=1000?(CFG.radiusMeters/1000).toFixed(1)+' km':CFG.radiusMeters+' m';
+  const items=[['Modus',CFG.mode==='ffa'?'FFA':`${CFG.numTeams}×${CFG.teamSize}`],['Duur',CFG.gameDurMin+' min'],['Grace',CFG.gracePeriodMin+' min'],['Speelveld',radiusStr],['Levens',CFG.lives+'x'],['Buiten zone',Math.floor(CFG.outsideTimeSec/60)+':'+String(CFG.outsideTimeSec%60).padStart(2,'0')],['Pulse',CFG.pulseIntervalMin+' min'],['Zone rot.',CFG.zoneRotMin+' min']];
+  el.innerHTML=items.map(([k,v])=>`<div style="background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:8px;padding:.4rem .65rem"><div style="font-size:.6rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--zinc-600)">${k}</div><div style="font-family:var(--f-mono);font-size:.88rem;font-weight:700;color:var(--zinc-200)">${v}</div></div>`).join('');
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // START GAME
-// ═══════════════════════════════════════════════════════════
-function startGame() {
+// ══════════════════════════════════════════════════════
+function startGame(){
   G.gameTotalS=CFG.gameDurMin*60; G.pulseS=CFG.pulseIntervalMin*60; G.zoneRotS=CFG.zoneRotMin*60; G.gameElapsedS=0;
   G.lives=CFG.lives; G.maxLives=CFG.lives;
   G.graceRemaining=CFG.gracePeriodMin*60; G.graceActive=true;
-  // Reset map so it re-initializes with correct CENTER
-  if (map) { map.remove(); map=null; myMarker=null; otherMarkers=[]; puCircle=null; puMarker=null; zoneCircle=null; deadOverlay=null; redBorderCircle=null; }
-  const gtb = document.getElementById('g-team-badge');
-  if (CFG.mode==='teams' && G.teams[G.myTeam]) {
-    const tc = TEAM_COLORS[G.teams[G.myTeam].color];
-    gtb.style.cssText=tc.badge+';padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:500;display:inline-block';
+  if(map){map.remove();map=null;myMarker=null;otherMarkers=[];puCircles=[];puMarkers=[];zoneCircle=null;deadOverlay=null;redBorderCircle=null;}
+  const gtb=document.getElementById('g-team-badge');
+  if(CFG.mode==='teams'&&G.teams[G.myTeam]){
+    const tc=TEAM_COLORS[G.teams[G.myTeam].color];
+    gtb.style.cssText=tc.badge+';padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:600;display:inline-block';
     gtb.textContent=G.teams[G.myTeam].name;
-  } else if (gtb) gtb.style.display='none';
-  renderHearts(document.getElementById('g-hearts'), G.lives, G.maxLives);
-  const gta = document.getElementById('g-teams-alive');
-  if (gta) gta.textContent = CFG.mode==='teams' ? G.teams.filter(t=>t.players.some(p=>p.alive)).length : '—';
-  document.getElementById('g-alive').textContent = allPlayers().filter(p=>p.alive).length;
-  renderPU(); startTimers();
-  if (!DEMO_MODE && db && G.isHost) syncGameStartToFirebase();
+  }else if(gtb)gtb.style.display='none';
+  renderHearts(document.getElementById('g-hearts'),G.lives,G.maxLives);
+  const gta=document.getElementById('g-teams-alive');
+  if(gta)gta.textContent=CFG.mode==='teams'?G.teams.filter(t=>t.players.some(p=>p.alive)).length:'—';
+  document.getElementById('g-alive').textContent=allPlayers().filter(p=>p.alive).length;
+  renderPU();startTimers();
+  if(!DEMO_MODE&&db&&G.isHost)syncGameStartToFirebase();
   go('s-number');
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // MAP
-// ═══════════════════════════════════════════════════════════
-let map=null, myMarker=null, otherMarkers=[], puCircles=[], puMarkers=[], zoneCircle=null, deadOverlay=null, redBorderCircle=null;
+// ══════════════════════════════════════════════════════
+let map=null,myMarker=null,otherMarkers=[],puCircles=[],puMarkers=[],zoneCircle=null,deadOverlay=null,redBorderCircle=null;
 let watchId=null;
 
-function initMap() {
-  if (map) return;
-  const el = document.getElementById('leafmap'); if (!el) return;
-  // Calculate zoom to fit MAX_RADIUS nicely
-  const zoom = MAX_RADIUS <= 200 ? 16 : MAX_RADIUS <= 500 ? 15 : MAX_RADIUS <= 1000 ? 14 : MAX_RADIUS <= 1500 ? 13 : 12;
-  map = L.map('leafmap',{zoomControl:true}).setView([CENTER.lat,CENTER.lng],zoom);
+function initMap(){
+  if(map) return;
+  const el=document.getElementById('leafmap'); if(!el) return;
+  const zoom=MAX_RADIUS<=200?16:MAX_RADIUS<=500?15:MAX_RADIUS<=1000?14:MAX_RADIUS<=1500?13:12;
+  map=L.map('leafmap',{zoomControl:true}).setView([CENTER.lat,CENTER.lng],zoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(map);
-
-  const myIcon = L.divIcon({html:'<div style="width:14px;height:14px;background:#e8f44a;border-radius:50%;border:2px solid #0a0a0f"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
-  myMarker = L.marker([CENTER.lat,CENTER.lng],{icon:myIcon}).addTo(map).bindPopup('Jij ('+G.name+')');
-
-  // Draw red zone using SVG mask: large rectangle minus the play circle = only outside is red
-  function drawZoneMask(r) {
-    if (deadOverlay) deadOverlay.remove();
-    const lat=CENTER.lat, lng=CENTER.lng;
-    const latPerMeter=1/111320, lngPerMeter=1/(111320*Math.cos(lat*Math.PI/180));
-    // Build a GeoJSON polygon: big outer box with inner circle hole
-    const boxDeg=5; // large box in degrees
-    const steps=64;
-    const hole=[];
-    for(let i=0;i<=steps;i++){
-      const a=(i/steps)*2*Math.PI;
-      hole.push([lng+Math.cos(a)*r*lngPerMeter, lat+Math.sin(a)*r*latPerMeter]);
-    }
+  const myIcon=L.divIcon({html:'<div style="width:14px;height:14px;background:#f43f5e;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 2px #f43f5e"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
+  myMarker=L.marker([CENTER.lat,CENTER.lng],{icon:myIcon}).addTo(map).bindPopup('Jij ('+G.name+')');
+  function drawZoneMask(r){
+    if(deadOverlay)deadOverlay.remove();
+    const lat=CENTER.lat,lng=CENTER.lng;
+    const latPerMeter=1/111320,lngPerMeter=1/(111320*Math.cos(lat*Math.PI/180));
+    const steps=64,hole=[];
+    for(let i=0;i<=steps;i++){const a=(i/steps)*2*Math.PI;hole.push([lng+Math.cos(a)*r*lngPerMeter,lat+Math.sin(a)*r*latPerMeter]);}
     const outerBox=[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]];
-    deadOverlay = L.geoJSON({type:'Feature',geometry:{type:'Polygon',coordinates:[outerBox,hole]}},{
-      style:{fillColor:'#e8281e',fillOpacity:.25,color:'transparent',weight:0,interactive:false}
+    deadOverlay=L.geoJSON({type:'Feature',geometry:{type:'Polygon',coordinates:[outerBox,hole]}},{
+      style:{fillColor:'#e11d48',fillOpacity:.2,color:'transparent',weight:0,interactive:false}
     }).addTo(map);
-    if (redBorderCircle) redBorderCircle.remove();
-    redBorderCircle = L.circle([lat,lng],{radius:r,color:'#e8281e',fill:false,weight:4,interactive:false}).addTo(map);
+    if(redBorderCircle)redBorderCircle.remove();
+    redBorderCircle=L.circle([lat,lng],{radius:r,color:'#f43f5e',fill:false,weight:4,interactive:false}).addTo(map);
   }
   drawZoneMask(MAX_RADIUS);
-  zoneCircle = {_currentR: MAX_RADIUS, _drawZoneMask: drawZoneMask};
-
-  // Center marker
-  L.circle([CENTER.lat,CENTER.lng],{radius:8,color:'#e8f44a',fillColor:'#e8f44a',fillOpacity:.5,weight:2,interactive:false}).addTo(map);
-
-  renderPUZones(); spawnOtherPlayers();
-
-  // Start GPS tracking
-  if (navigator.geolocation) {
-    watchId = navigator.geolocation.watchPosition(pos => {
-      const lat=pos.coords.latitude, lng=pos.coords.longitude;
-      G.gpsLat=lat; G.gpsLng=lng;
-      if (myMarker) myMarker.setLatLng([lat,lng]);
-      // Check if outside zone
-      const dist = map.distance([lat,lng],[CENTER.lat,CENTER.lng]);
-      const progress = G.gameElapsedS/G.gameTotalS;
-      const currentR = MAX_RADIUS-(MAX_RADIUS-MAX_RADIUS*(CFG.shrinkPct/100))*progress;
-      G.isOutside = dist > currentR;
-    }, ()=>{}, {enableHighAccuracy:true, maximumAge:5000});
+  zoneCircle={_currentR:MAX_RADIUS,_drawZoneMask:drawZoneMask};
+  L.circle([CENTER.lat,CENTER.lng],{radius:6,color:'#fff',fillColor:'#fff',fillOpacity:.8,weight:2,interactive:false}).addTo(map);
+  renderPUZones();spawnOtherPlayers();
+  if(navigator.geolocation){
+    watchId=navigator.geolocation.watchPosition(pos=>{
+      const lat=pos.coords.latitude,lng=pos.coords.longitude;
+      G.gpsLat=lat;G.gpsLng=lng;
+      if(myMarker)myMarker.setLatLng([lat,lng]);
+      const dist=map.distance([lat,lng],[CENTER.lat,CENTER.lng]);
+      const progress=G.gameElapsedS/G.gameTotalS;
+      const currentR=MAX_RADIUS-(MAX_RADIUS-MAX_RADIUS*(CFG.shrinkPct/100))*progress;
+      G.isOutside=dist>currentR;
+    },()=>{},{enableHighAccuracy:true,maximumAge:5000});
   }
 }
 
-function updateZoneSize() {
-  if (!zoneCircle) return;
-  const progress = G.gameElapsedS/G.gameTotalS;
-  const minR = MAX_RADIUS*(CFG.shrinkPct/100);
-  const currentR = MAX_RADIUS-(MAX_RADIUS-minR)*progress;
-  zoneCircle._currentR = currentR;
+function updateZoneSize(){
+  if(!zoneCircle) return;
+  const progress=G.gameElapsedS/G.gameTotalS;
+  const minR=MAX_RADIUS*(CFG.shrinkPct/100);
+  const currentR=MAX_RADIUS-(MAX_RADIUS-minR)*progress;
+  zoneCircle._currentR=currentR;
   zoneCircle._drawZoneMask(currentR);
-  const pct = Math.round((currentR/MAX_RADIUS)*100);
-  const el = document.getElementById('zone-pct'); if(el) el.textContent=pct+'%';
-  const fill = document.getElementById('zone-shrink-fill'); if(fill) fill.style.width=pct+'%';
+  const pct=Math.round((currentR/MAX_RADIUS)*100);
+  const el=document.getElementById('zone-pct'); if(el)el.textContent=pct+'%';
+  const fill=document.getElementById('zone-shrink-fill'); if(fill)fill.style.width=pct+'%';
 }
 
-function getPUZonePositions() {
-  // Generate 5 power-up zone positions relative to CENTER within the play area
-  const r = MAX_RADIUS * 0.55; // place zones at ~55% of radius
-  const latPerMeter = 1/111320;
-  const lngPerMeter = 1/(111320*Math.cos(CENTER.lat*Math.PI/180));
-  const angles = [45,120,200,280,340];
-  return angles.map((deg,i) => {
-    const rad = deg*Math.PI/180;
-    return {
-      lat: CENTER.lat + Math.sin(rad)*r*latPerMeter,
-      lng: CENTER.lng + Math.cos(rad)*r*lngPerMeter,
-      pu: ['shield','radar','piercing','invisible','decoy'][i]
-    };
+function getPUZonePositions(){
+  const r=MAX_RADIUS*.55;
+  const latPerMeter=1/111320,lngPerMeter=1/(111320*Math.cos(CENTER.lat*Math.PI/180));
+  return [45,120,200,280,340].map((deg,i)=>{
+    const rad=deg*Math.PI/180;
+    return{lat:CENTER.lat+Math.sin(rad)*r*latPerMeter,lng:CENTER.lng+Math.cos(rad)*r*lngPerMeter,pu:['shield','radar','piercing','invisible','decoy'][i]};
   });
 }
 
-function renderPUZones() {
-  if (!map) return;
-  // Remove old zone markers
-  puCircles.forEach(c=>c.remove()); puCircles=[];
-  puMarkers.forEach(m=>m.remove()); puMarkers=[];
-  const zones = getPUZonePositions();
-  const enabledKeys = getEnabledPUs().filter(k=>'revive'!==k);
-  if (!enabledKeys.length) return;
-  const zoneRadius = Math.max(30, MAX_RADIUS*0.08);
-  // Show TWO zones simultaneously: activeZoneIdx and activeZoneIdx+1
-  [0,1].forEach(offset => {
-    const zoneIdx = (G.activeZoneIdx + offset) % zones.length;
-    const z = zones[zoneIdx];
-    const puKey = enabledKeys[zoneIdx % enabledKeys.length];
-    const pw = ALL_POWERUPS[puKey];
-    const color = offset===0 ? '#4af4a0' : '#f4c430'; // green for primary, gold for secondary
-    const circ = L.circle([z.lat,z.lng],{radius:zoneRadius,color,fillColor:color,fillOpacity:.15,weight:2,dashArray:'4 3',interactive:false}).addTo(map);
-    const icon = L.divIcon({html:`<div style="background:#13131a;border:1.5px solid ${color};border-radius:8px;padding:3px 7px;font-size:11px;color:${color};font-family:'DM Sans',sans-serif;white-space:nowrap">${pw.icon} ${pw.name}</div>`,className:'',iconAnchor:[35,12]});
-    const marker = L.marker([z.lat,z.lng],{icon}).addTo(map);
-    puCircles.push(circ); puMarkers.push(marker);
+function renderPUZones(){
+  if(!map) return;
+  puCircles.forEach(c=>c.remove());puCircles=[];
+  puMarkers.forEach(m=>m.remove());puMarkers=[];
+  const zones=getPUZonePositions();
+  const enabledKeys=getEnabledPUs().filter(k=>'revive'!==k);
+  if(!enabledKeys.length) return;
+  const zoneRadius=Math.max(30,MAX_RADIUS*.08);
+  [0,1].forEach(offset=>{
+    const zoneIdx=(G.activeZoneIdx+offset)%zones.length;
+    const z=zones[zoneIdx];
+    const puKey=enabledKeys[zoneIdx%enabledKeys.length];
+    const pw=ALL_POWERUPS[puKey];
+    const color=offset===0?'#10b981':'#f59e0b';
+    const circ=L.circle([z.lat,z.lng],{radius:zoneRadius,color,fillColor:color,fillOpacity:.15,weight:2,dashArray:'4 3',interactive:false}).addTo(map);
+    const svgIcon=(PU_ICONS[puKey]||'').replace(/width="\d+"/,'width="22"').replace(/height="\d+"/,'height="22"');
+    const icon=L.divIcon({html:`<div style="color:${color};filter:drop-shadow(0 1px 4px rgba(0,0,0,.7))">${svgIcon}</div>`,className:'',iconAnchor:[11,11]});
+    const marker=L.marker([z.lat,z.lng],{icon}).addTo(map);
+    marker.on('click',()=>showPUMapPopup(puKey,color));
+    puCircles.push(circ);puMarkers.push(marker);
   });
 }
 
-function spawnOtherPlayers() {
-  // Player markers start hidden. They only appear during pulse (showPulse).
-  // In real play, GPS positions come from Firebase; for now markers are placed at CENTER and hidden.
-  otherMarkers.forEach(m=>m.remove()); otherMarkers=[];
-  if (!map) return;
-  allPlayers().filter(p=>p.number!==G.playerNumber&&p.alive).forEach(p => {
-    const tc = CFG.mode==='teams' ? TEAM_COLORS[G.teams[p.teamIdx]?.color||0].dot : '#f44a7a';
-    const icon = L.divIcon({html:`<div style="width:10px;height:10px;background:${tc};border-radius:50%;border:2px solid #0a0a0f;opacity:0;transition:opacity .3s"></div>`,iconSize:[10,10],iconAnchor:[5,5],className:''});
+function spawnOtherPlayers(){
+  otherMarkers.forEach(m=>m.remove());otherMarkers=[];
+  if(!map) return;
+  allPlayers().filter(p=>p.number!==G.playerNumber&&p.alive).forEach(p=>{
+    const tc=CFG.mode==='teams'?TEAM_COLORS[G.teams[p.teamIdx]?.color||0].dot:'#3b82f6';
+    const icon=L.divIcon({html:`<div style="width:10px;height:10px;background:${tc};border-radius:50%;border:2px solid #fff;opacity:0;transition:opacity .3s"></div>`,iconSize:[10,10],iconAnchor:[5,5],className:''});
     otherMarkers.push(L.marker([CENTER.lat,CENTER.lng],{icon,title:p.name}).addTo(map));
   });
 }
 
-function showPulse() {
-  otherMarkers.forEach(m => {
-    const el=m.getElement(); if(el){const d=el.querySelector('div');if(d)d.style.opacity='1';}
-    const ll=m.getLatLng(); m.setLatLng([ll.lat+(Math.random()*.004-.002),ll.lng+(Math.random()*.004-.002)]);
+function showPulse(){
+  otherMarkers.forEach(m=>{
+    const el=m.getElement();if(el){const d=el.querySelector('div');if(d)d.style.opacity='1';}
+    const ll=m.getLatLng();m.setLatLng([ll.lat+(Math.random()*.004-.002),ll.lng+(Math.random()*.004-.002)]);
   });
   setTimeout(()=>otherMarkers.forEach(m=>{const el=m.getElement();if(el){const d=el.querySelector('div');if(d)d.style.opacity='0';}}),10000);
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // TABS
-// ═══════════════════════════════════════════════════════════
-function switchTab(t) {
-  ['map','enter','lb'].forEach(x => {
+// ══════════════════════════════════════════════════════
+function switchTab(t){
+  ['map','enter','lb'].forEach(x=>{
     document.getElementById('tab-'+x+'-content').style.display=x===t?'block':'none';
     document.getElementById('tab-'+x).classList.toggle('active',x===t);
   });
-  if (t==='lb') renderLeaderboard();
-  if (t==='enter') { renderPU(); const nd=document.getElementById('my-number-display'); if(nd)nd.textContent=G.playerNumber||'—'; }
+  if(t==='lb')renderLeaderboard();
+  if(t==='enter'){renderPU();const nd=document.getElementById('my-number-display');if(nd)nd.textContent=G.playerNumber||'—';}
 }
 
-// ═══════════════════════════════════════════════════════════
-// ELIMINATE BY NUMBER
-// ═══════════════════════════════════════════════════════════
-function doEliminate() {
-  if (G.graceActive) {
-    const rem = G.graceRemaining;
-    toast('🛡️ Grace period! Nog '+Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0')+' — niemand kan af worden gemaakt','red');
+// ══════════════════════════════════════════════════════
+// ELIMINATE
+// ══════════════════════════════════════════════════════
+function doEliminate(){
+  if(G.graceActive){
+    const rem=G.graceRemaining;
+    toast('Grace period! Nog '+Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0'),'red');
     return;
   }
-  const input = document.getElementById('target-number');
-  const num = input.value.trim();
-  if (num.length !== 5) { toast('Voer een geldig 5-cijferig nummer in','red'); return; }
-  if (num === G.playerNumber) { toast('Dat is jouw eigen nummer!','red'); return; }
-  const target = allPlayers().find(p => p.number===num);
-  if (!target) { toast('Nummer '+num+' niet gevonden','red'); return; }
-  if (!target.alive) { toast(target.name+' is al geëlimineerd','red'); return; }
-  if (CFG.mode==='teams' && target.teamIdx===G.myTeam) { toast('Dat is een teamgenoot!','red'); return; }
-  const hasShield = target.hasShield;
-  const hasPiercing = G.powerups.includes('piercing');
-  if (hasShield && !hasPiercing) { toast('🛡️ '+target.name+' heeft een schild!','red'); addLog('Scan geblokkeerd: schild op '+target.name); input.value=''; return; }
-  if (hasShield && hasPiercing) {
-    G.powerups[G.powerups.indexOf('piercing')]=null;
-    toast('🎯 Piercing shot — schild doorboord!'); addLog('Piercing shot op '+target.name);
-  }
+  const input=document.getElementById('target-number');
+  const num=input.value.trim();
+  if(num.length!==5){toast('Voer een geldig 5-cijferig nummer in','red');return;}
+  if(num===G.playerNumber){toast('Dat is jouw eigen nummer!','red');return;}
+  const target=allPlayers().find(p=>p.number===num);
+  if(!target){toast('Nummer '+num+' niet gevonden','red');return;}
+  if(!target.alive){toast(target.name+' is al geëlimineerd','red');return;}
+  if(CFG.mode==='teams'&&target.teamIdx===G.myTeam){toast('Dat is een teamgenoot!','red');return;}
+  const hasShield=target.hasShield;
+  const hasPiercing=G.powerups.includes('piercing');
+  if(hasShield&&!hasPiercing){toast(target.name+' heeft een schild!','red');addLog('Scan geblokkeerd: schild op '+target.name);input.value='';return;}
+  if(hasShield&&hasPiercing){G.powerups[G.powerups.indexOf('piercing')]=null;toast('Piercing shot — schild doorboord!');addLog('Piercing shot op '+target.name);}
   G.kills++;
-  G.teams.forEach(t => { const p=t.players.find(p=>p.number===num); if(p){p.lives=Math.max(0,p.lives-1);if(p.lives<=0){p.alive=false;}delete p.hasShield;} });
+  G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p){p.lives=Math.max(0,p.lives-1);if(p.lives<=0)p.alive=false;delete p.hasShield;}});
   G.teams[G.myTeam].players[0].kills=G.kills;
   document.getElementById('g-kills').textContent=G.kills;
-  updAlive(); playSound('kill');
-  toast('💥 '+target.name+' (#'+num+') geraakt! +1 kill','red');
+  updAlive();playSound('kill');
+  toast(target.name+' (#'+num+') geraakt! +1 kill','red');
   addLog(target.name+' (#'+num+') geraakt door '+G.name);
-  input.value=''; renderPU();
-  if (!DEMO_MODE && db) syncKillToFirebase(target.name, num);
+  input.value='';renderPU();
+  if(!DEMO_MODE&&db)syncKillToFirebase(target.name,num);
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // TIMERS
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 let tPulse,tZoneRot,tZoneIn,tGame,tGrace,tOutside;
-function startTimers() {
+function startTimers(){
   [tPulse,tZoneRot,tZoneIn,tGame,tGrace,tOutside].forEach(clearInterval);
-
-  // Grace period timer
-  const graceBanner = document.getElementById('grace-banner');
-  if (graceBanner) graceBanner.style.display = G.graceActive ? 'block' : 'none';
-  tGrace = setInterval(()=>{
-    if (!G.graceActive) { clearInterval(tGrace); return; }
+  const graceBanner=document.getElementById('grace-banner');
+  if(graceBanner)graceBanner.style.display=G.graceActive?'block':'none';
+  tGrace=setInterval(()=>{
+    if(!G.graceActive){clearInterval(tGrace);return;}
     G.graceRemaining--;
-    const el = document.getElementById('grace-timer');
-    if (el) el.textContent = Math.floor(G.graceRemaining/60)+':'+String(G.graceRemaining%60).padStart(2,'0');
-    if (G.graceRemaining<=0) {
+    const el=document.getElementById('grace-timer');
+    if(el)el.textContent=Math.floor(G.graceRemaining/60)+':'+String(G.graceRemaining%60).padStart(2,'0');
+    if(G.graceRemaining<=0){
       G.graceActive=false;
-      if (graceBanner) graceBanner.style.display='none';
-      playSound('pulse');
-      toast('🚨 Grace period voorbij — jacht begint nu!','red');
-      addLog('Grace period afgelopen — jacht begon');
-      clearInterval(tGrace);
+      if(graceBanner)graceBanner.style.display='none';
+      playSound('pulse');toast('Grace period voorbij — jacht begint nu!','red');
+      addLog('Grace period afgelopen');clearInterval(tGrace);
     }
   },1000);
-  tGame = setInterval(()=>{
+  tGame=setInterval(()=>{
     G.gameElapsedS++;
-    const rem = G.gameTotalS-G.gameElapsedS;
-    if (rem<=0) { clearInterval(tGame); toast('Spel afgelopen!'); return; }
-    const el = document.getElementById('game-time-cd'); if(el) el.textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');
+    const rem=G.gameTotalS-G.gameElapsedS;
+    if(rem<=0){clearInterval(tGame);toast('Spel afgelopen!');return;}
+    const el=document.getElementById('game-time-cd');if(el)el.textContent=Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0');
     updateZoneSize();
   },1000);
-  tPulse = setInterval(()=>{G.pulseS--;if(G.pulseS<=0){triggerPulse();G.pulseS=CFG.pulseIntervalMin*60;}const el=document.getElementById('pulse-cd');if(el)el.textContent=Math.floor(G.pulseS/60)+':'+String(G.pulseS%60).padStart(2,'0');},1000);
-  tZoneRot = setInterval(()=>{G.zoneRotS--;if(G.zoneRotS<=0){rotateZone();G.zoneRotS=CFG.zoneRotMin*60;}const el=document.getElementById('zone-rot-cd');if(el)el.textContent=Math.floor(G.zoneRotS/60)+':'+String(G.zoneRotS%60).padStart(2,'0');},1000);
-  tZoneIn = setInterval(()=>{
-    const inZone = isPlayerInPUZone();
-    if (inZone) {
+  tPulse=setInterval(()=>{G.pulseS--;if(G.pulseS<=0){triggerPulse();G.pulseS=CFG.pulseIntervalMin*60;}const el=document.getElementById('pulse-cd');if(el)el.textContent=Math.floor(G.pulseS/60)+':'+String(G.pulseS%60).padStart(2,'0');},1000);
+  tZoneRot=setInterval(()=>{G.zoneRotS--;if(G.zoneRotS<=0){rotateZone();G.zoneRotS=CFG.zoneRotMin*60;}const el=document.getElementById('zone-rot-cd');if(el)el.textContent=Math.floor(G.zoneRotS/60)+':'+String(G.zoneRotS%60).padStart(2,'0');},1000);
+  tZoneIn=setInterval(()=>{
+    const inZone=isPlayerInPUZone();
+    if(inZone){
       G.inZoneS++;
-      const need=CFG.zoneTimeMin*60, rem=need-G.inZoneS;
+      const need=CFG.zoneTimeMin*60,rem=need-G.inZoneS;
       const el=document.getElementById('zone-cd');
-      if(el) el.textContent=Math.floor(rem/60)+':'+String(Math.max(0,rem%60)).padStart(2,'0');
+      if(el)el.textContent=Math.floor(rem/60)+':'+String(Math.max(0,rem%60)).padStart(2,'0');
       if(G.inZoneS>=need){awardPowerup();G.inZoneS=0;}
-    } else {
-      // Not in zone — reset counter and show dash
-      if(G.inZoneS>0) G.inZoneS=Math.max(0,G.inZoneS-1);
+    }else{
+      if(G.inZoneS>0)G.inZoneS=Math.max(0,G.inZoneS-1);
       const el=document.getElementById('zone-cd');
-      if(el&&G.inZoneS===0) el.textContent='—';
+      if(el&&G.inZoneS===0)el.textContent='—';
     }
   },1000);
-  tOutside = setInterval(()=>{
-    if (!G.alive) return;
-    const warn = document.getElementById('outside-warn');
-    if (G.isOutside) {
+  tOutside=setInterval(()=>{
+    if(!G.alive)return;
+    const warn=document.getElementById('outside-warn');
+    if(G.isOutside){
       G.outsideS++;
-      const rem = CFG.outsideTimeSec-G.outsideS;
-      if (warn) { warn.style.display='block'; const t=document.getElementById('outside-timer'); if(t)t.textContent=Math.floor(rem/60)+':'+String(Math.max(0,rem%60)).padStart(2,'0'); }
-      if (G.outsideS>=CFG.outsideTimeSec) { G.outsideS=0; takeHit('buiten de zone'); }
-    } else {
+      const rem=CFG.outsideTimeSec-G.outsideS;
+      if(warn){warn.style.display='block';const t=document.getElementById('outside-timer');if(t)t.textContent=Math.floor(rem/60)+':'+String(Math.max(0,rem%60)).padStart(2,'0');}
+      if(G.outsideS>=CFG.outsideTimeSec){G.outsideS=0;takeHit('buiten de zone');}
+    }else{
       G.outsideS=Math.max(0,G.outsideS-2);
-      if (warn && G.outsideS===0) warn.style.display='none';
+      if(warn&&G.outsideS===0)warn.style.display='none';
     }
   },1000);
 }
 
-function triggerPulse(){playSound('pulse');toast('⚡ PULSE — iedereen 10s zichtbaar!');addLog('Pulse getriggerd');showPulse();}
-function rotateZone(){G.activeZoneIdx=(G.activeZoneIdx+1)%5;playSound('zone');const enabledKeys=getEnabledPUs().filter(k=>k!=='revive');const puKey=enabledKeys.length?enabledKeys[G.activeZoneIdx%enabledKeys.length]:'shield';const pw2=ALL_POWERUPS[enabledKeys[(G.activeZoneIdx+1)%enabledKeys.length]||'shield'];toast('Zone → '+ALL_POWERUPS[puKey].icon+' '+ALL_POWERUPS[puKey].name+' & '+pw2.icon+' '+pw2.name,'green');addLog('Zones geroteerd');if(map)renderPUZones();}
-function isPlayerInPUZone() {
-  if (!map || G.gpsLat===null) return false;
-  const zones = getPUZonePositions();
-  const zoneRadius = Math.max(30, MAX_RADIUS*0.08);
-  // Check both active zones
-  for (let offset=0; offset<2; offset++) {
-    const z = zones[(G.activeZoneIdx+offset)%zones.length];
-    const dist = map.distance([G.gpsLat,G.gpsLng],[z.lat,z.lng]);
-    if (dist <= zoneRadius) return true;
+function triggerPulse(){playSound('pulse');toast('PULSE — iedereen 10s zichtbaar!');addLog('Pulse getriggerd');showPulse();}
+function rotateZone(){
+  G.activeZoneIdx=(G.activeZoneIdx+1)%5;playSound('zone');
+  const enabledKeys=getEnabledPUs().filter(k=>k!=='revive');
+  if(!enabledKeys.length){toast('Geen power-ups ingeschakeld');addLog('Zones geroteerd (geen PUs)');if(map)renderPUZones();return;}
+  const puKey=enabledKeys[G.activeZoneIdx%enabledKeys.length];
+  const pw2=ALL_POWERUPS[enabledKeys[(G.activeZoneIdx+1)%enabledKeys.length]||enabledKeys[0]];
+  toast(ALL_POWERUPS[puKey].name+' & '+pw2.name+' zones actief','green');
+  addLog('Zones geroteerd');if(map)renderPUZones();
+}
+function isPlayerInPUZone(){
+  if(!map||G.gpsLat===null)return false;
+  const zones=getPUZonePositions();
+  const zoneRadius=Math.max(30,MAX_RADIUS*.08);
+  for(let offset=0;offset<2;offset++){
+    const z=zones[(G.activeZoneIdx+offset)%zones.length];
+    const dist=map.distance([G.gpsLat,G.gpsLng],[z.lat,z.lng]);
+    if(dist<=zoneRadius)return true;
   }
   return false;
 }
+function awardPowerup(){const empty=G.powerups.indexOf(null);if(empty===-1){toast('Power-up slots vol!');return;}const enabledKeys=getEnabledPUs();if(!enabledKeys.length)return;const pw=enabledKeys[G.activeZoneIdx%enabledKeys.length];G.powerups[empty]=pw;playSound('powerup');toast(ALL_POWERUPS[pw].name+' verdiend!','green');addLog('Power-up verdiend: '+ALL_POWERUPS[pw].name);renderPU();}
+function takeHit(reason){G.lives--;renderHearts(document.getElementById('g-hearts'),G.lives,G.maxLives);if(G.lives<=0){G.alive=false;playSound('eliminated');toast('Geëlimineerd ('+reason+')!','red');addLog(G.name+' geëlimineerd: '+reason);document.getElementById('elim-kills').textContent=G.kills;setTimeout(()=>go('s-elim'),1500);}else{playSound('kill');toast('-1 leven ('+reason+') — '+G.lives+' over','red');addLog(G.name+' verloor leven: '+reason);}}
+function updAlive(){const alive=allPlayers().filter(p=>p.alive).length;document.getElementById('g-alive').textContent=alive;const ta=document.getElementById('g-teams-alive');if(ta&&CFG.mode==='teams')ta.textContent=G.teams.filter(t=>t.players.some(p=>p.alive)).length;updPlace();}
+function updPlace(){const sorted=allPlayers().sort((a,b)=>{if(a.alive&&!b.alive)return-1;if(!a.alive&&b.alive)return 1;return b.kills-a.kills;});const idx=sorted.findIndex(p=>p.number===G.playerNumber);const el=document.getElementById('g-place');if(el)el.textContent=idx>=0?idx+1:'—';}
 
-function awardPowerup(){const empty=G.powerups.indexOf(null);if(empty===-1){toast('Power-up slots vol!');return;}const enabledKeys=getEnabledPUs();if(!enabledKeys.length)return;const pw=enabledKeys[G.activeZoneIdx%enabledKeys.length];G.powerups[empty]=pw;playSound('powerup');toast(ALL_POWERUPS[pw].icon+' '+ALL_POWERUPS[pw].name+' verdiend!','green');addLog('Power-up verdiend: '+ALL_POWERUPS[pw].name);renderPU();}function takeHit(reason){G.lives--;renderHearts(document.getElementById('g-hearts'),G.lives,G.maxLives);if(G.lives<=0){G.alive=false;playSound('eliminated');toast('Je bent geëlimineerd ('+reason+')!','red');addLog(G.name+' geëlimineerd: '+reason);document.getElementById('elim-kills').textContent=G.kills;setTimeout(()=>go('s-elim'),1500);}else{playSound('kill');toast('❤️ -1 leven ('+reason+') — '+G.lives+' over','red');addLog(G.name+' verloor leven: '+reason);}}
-function updAlive(){const alive=allPlayers().filter(p=>p.alive).length;document.getElementById('g-alive').textContent=alive;const ta=document.getElementById('g-teams-alive');if(ta&&CFG.mode==='teams')ta.textContent=G.teams.filter(t=>t.players.some(p=>p.alive)).length;}
-
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // LEADERBOARD & ADMIN
-// ═══════════════════════════════════════════════════════════
-function renderLeaderboard() {
-  const el = document.getElementById('lb-list'); if (!el) return;
-  if (CFG.mode==='teams') {
-    const ts = G.teams.map(t=>({...t,kills:t.players.reduce((s,p)=>s+p.kills,0),aliveCount:t.players.filter(p=>p.alive).length,teamAlive:t.players.some(p=>p.alive)})).sort((a,b)=>{if(a.teamAlive&&!b.teamAlive)return-1;if(!a.teamAlive&&b.teamAlive)return 1;return b.kills-a.kills;});
-    el.innerHTML = ts.map((t,i)=>{const tc=TEAM_COLORS[t.color];return`<div class="lb-row" style="border-color:${tc.border}50"><div class="lb-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div><div style="width:9px;height:9px;border-radius:50%;background:${tc.border}"></div><div class="lb-name">${t.name}</div><span style="font-size:.72rem;color:var(--muted)">${t.aliveCount}/${t.players.length}</span><div class="lb-kills">${t.kills}</div><span class="badge ${t.teamAlive?'badge-alive':'badge-dead'}">${t.teamAlive?'alive':'out'}</span></div>`;}).join('') +
-    '<h3 style="margin:.6rem 0 .4rem">Individueel</h3>' +
-    allPlayers().sort((a,b)=>b.kills-a.kills).slice(0,8).map((p,i)=>{const tc=TEAM_COLORS[G.teams[p.teamIdx]?.color||0];return`<div class="lb-row"><div class="lb-rank" style="font-size:.85rem">${i+1}</div><div style="width:7px;height:7px;border-radius:50%;background:${tc.dot}"></div><div class="lb-name">${p.name}</div><span style="font-family:var(--fn);font-size:.85rem;color:var(--muted)">${p.number}</span><div class="lb-kills">${p.kills}</div><span class="badge ${p.alive?'badge-alive':'badge-dead'}">${p.alive?'alive':'out'}</span></div>`;}).join('');
-  } else {
-    el.innerHTML = allPlayers().sort((a,b)=>{if(a.alive&&!b.alive)return-1;if(!a.alive&&b.alive)return 1;return b.kills-a.kills;}).map((p,i)=>`<div class="lb-row"><div class="lb-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div><div class="lb-name">${p.name}</div><span style="font-family:var(--fn);font-size:.85rem;color:var(--muted)">${p.number}</span><div class="lb-kills">${p.kills}</div><span class="badge ${p.alive?'badge-alive':'badge-dead'}">${p.alive?'alive':'out'}</span></div>`).join('');
+// ══════════════════════════════════════════════════════
+function renderLeaderboard(){
+  const el=document.getElementById('lb-list'); if(!el) return;
+  if(CFG.mode==='teams'){
+    const ts=G.teams.map(t=>({...t,kills:t.players.reduce((s,p)=>s+p.kills,0),aliveCount:t.players.filter(p=>p.alive).length,teamAlive:t.players.some(p=>p.alive)})).sort((a,b)=>{if(a.teamAlive&&!b.teamAlive)return-1;if(!a.teamAlive&&b.teamAlive)return 1;return b.kills-a.kills;});
+    el.innerHTML=ts.map((t,i)=>{const tc=TEAM_COLORS[t.color];return`<div class="lb-row" style="border-left:3px solid ${tc.border}40"><div class="lb-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div><div style="width:8px;height:8px;border-radius:50%;background:${tc.border}"></div><div class="lb-name">${t.name}</div><span style="font-size:.72rem;color:var(--zinc-500)">${t.aliveCount}/${t.players.length}</span><div class="lb-kills">${t.kills}</div><span class="badge ${t.teamAlive?'badge-alive':'badge-dead'}">${t.teamAlive?'alive':'out'}</span></div>`;}).join('')+
+    '<div class="subtitle" style="padding:.65rem 0 .4rem">Individueel</div>'+
+    allPlayers().sort((a,b)=>b.kills-a.kills).slice(0,8).map((p,i)=>{const tc=TEAM_COLORS[G.teams[p.teamIdx]?.color||0];return`<div class="lb-row"><div class="lb-rank" style="font-size:.85rem">${i+1}</div><div style="width:6px;height:6px;border-radius:50%;background:${tc.dot}"></div><div class="lb-name">${p.name}</div><span class="mono" style="font-size:.8rem;color:var(--zinc-500)">${p.number}</span><div class="lb-kills">${p.kills}</div><span class="badge ${p.alive?'badge-alive':'badge-dead'}">${p.alive?'alive':'out'}</span></div>`;}).join('');
+  }else{
+    el.innerHTML=allPlayers().sort((a,b)=>{if(a.alive&&!b.alive)return-1;if(!a.alive&&b.alive)return 1;return b.kills-a.kills;}).map((p,i)=>`<div class="lb-row"><div class="lb-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div><div class="lb-name">${p.name}</div><span class="mono" style="font-size:.8rem;color:var(--zinc-500)">${p.number}</span><div class="lb-kills">${p.kills}</div><span class="badge ${p.alive?'badge-alive':'badge-dead'}">${p.alive?'alive':'out'}</span></div>`).join('');
   }
 }
 
-function renderAdmin() {
-  const el = document.getElementById('admin-list'); if (!el) return;
-  el.innerHTML = G.teams.map((t,ti) => {
-    const tc = TEAM_COLORS[t.color];
-    const header = CFG.mode==='teams' ? `<div style="font-size:.75rem;font-weight:500;color:${tc.border};margin-bottom:.3rem;padding:2px 7px;background:${tc.fill};border-radius:6px;display:inline-block">${t.name}</div>` : '';
-    return header + t.players.map((p,pi) => `
-      <div class="admin-player">
-        <div>
-          <span style="font-weight:500">${p.name}</span>
-          <span style="font-family:var(--fn);font-size:.9rem;color:var(--accent);margin-left:.4rem">${p.number}</span>
-          <span class="badge ${p.alive?'badge-alive':'badge-dead'}" style="margin-left:.3rem">${p.alive?'alive':'out'}</span>
-          ${Array.from({length:G.maxLives}).map((_,i)=>`<span style="font-size:.75rem;opacity:${i<p.lives?1:.2}">❤️</span>`).join('')}
-          ${p.hasShield?'<span style="font-size:.75rem">🛡️</span>':''}
+function renderAdmin(){
+  const el=document.getElementById('admin-list'); if(!el) return;
+  el.innerHTML=G.teams.map((t,ti)=>{
+    const tc=TEAM_COLORS[t.color];
+    const header=CFG.mode==='teams'?`<div style="font-size:.65rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:${tc.border};margin-bottom:.4rem">${t.name}</div>`:'';
+    return header+t.players.map((p,pi)=>`
+      <div class="admin-row">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+            <span style="font-weight:600;font-size:.88rem">${p.name}</span>
+            <span class="mono" style="font-size:.8rem;color:var(--zinc-500)">${p.number}</span>
+            <span class="badge ${p.alive?'badge-alive':'badge-dead'}">${p.alive?'alive':'out'}</span>
+            ${p.hasShield?`<span class="badge" style="background:var(--rose-muted);color:var(--rose);font-size:.65rem">Schild</span>`:''}
+          </div>
+          <div>${Array.from({length:G.maxLives}).map((_,i)=>`<svg width="11" height="11" viewBox="0 0 24 24" fill="${i<p.lives?'#f43f5e':'#3f3f46'}"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`).join('')}</div>
         </div>
-        <div class="row" style="gap:.35rem">
-          ${!p.alive?`<button class="btn-small" style="background:var(--accent2);color:#0a0a0f" onclick="adminRevive(${ti},${pi})">Revive</button>`:''}
-          ${p.alive?`<button class="btn-small" style="background:var(--accent3);color:#fff" onclick="adminElim(${ti},${pi})">Elim</button>`:''}
+        <div style="display:flex;gap:.35rem;flex-shrink:0">
+          ${!p.alive?`<button class="btn btn-success btn-sm" onclick="adminRevive(${ti},${pi})">Revive</button>`:''}
+          ${p.alive?`<button class="btn btn-danger btn-sm" onclick="adminElim(${ti},${pi})">Elim</button>`:''}
         </div>
       </div>`).join('');
   }).join('');
-  const log = document.getElementById('admin-log'); if(log) log.innerHTML = G.adminLog.slice(-8).reverse().map(l=>`<div>${l}</div>`).join('');
+  const log=document.getElementById('admin-log');if(log)log.innerHTML=G.adminLog.slice(-8).reverse().map(l=>`<div style="padding:2px 0;border-bottom:1px solid var(--zinc-800)">${l}</div>`).join('');
 }
 
 function adminRevive(ti,pi){G.teams[ti].players[pi].alive=true;G.teams[ti].players[pi].lives=Math.max(1,Math.floor(G.maxLives/2));addLog(G.teams[ti].players[pi].name+' herleefd');toast(G.teams[ti].players[pi].name+' herleefd!','green');playSound('powerup');updAlive();renderAdmin();}
@@ -1162,131 +1576,74 @@ function adminRotateZone(){rotateZone();addLog('Admin: zone geroteerd');}
 function adminEndGame(){addLog('Spel beëindigd');toast('Spel beëindigd!','red');playSound('eliminated');setTimeout(()=>go('s-home'),1500);}
 function addLog(msg){const t=new Date();G.adminLog.push(`[${t.getHours()}:${String(t.getMinutes()).padStart(2,'0')}] ${msg}`);}
 
-// ═══════════════════════════════════════════════════════════
-// FIREBASE SYNC — volledig werkend
-// ═══════════════════════════════════════════════════════════
-function syncLobbyToFirebase() {
-  if (!db) return;
-  lobbyRef = db.ref('lobbies/'+G.lobby);
-  const lobbyData = {
-    cfg: CFG,
-    center: CENTER,
-    radius: MAX_RADIUS,
-    teams: G.teams,
-    started: false,
-    ts: Date.now()
-  };
-  lobbyRef.set(lobbyData);
-  // Listen for players joining
-  lobbyRef.child('players').on('value', snap => {
-    const players = snap.val();
-    if (!players) return;
-    // Rebuild teams from Firebase players list
-    const arr = Object.values(players);
-    if (CFG.mode==='teams') {
-      // Reset team players, re-add from Firebase
-      G.teams.forEach(t => t.players=[]);
-      arr.forEach(p => {
-        const ti = p.teamIdx||0;
-        if (G.teams[ti]) G.teams[ti].players.push(p);
-      });
-    } else {
-      G.teams[0].players = arr;
-    }
+// ══════════════════════════════════════════════════════
+// FIREBASE SYNC
+// ══════════════════════════════════════════════════════
+function syncLobbyToFirebase(){
+  if(!db)return;
+  lobbyRef=db.ref('lobbies/'+G.lobby);
+  lobbyRef.set({cfg:CFG,center:CENTER,radius:MAX_RADIUS,teams:G.teams,started:false,ts:Date.now()});
+  lobbyRef.child('players').on('value',snap=>{
+    const players=snap.val(); if(!players)return;
+    const arr=Object.values(players);
+    if(CFG.mode==='teams'){G.teams.forEach(t=>t.players=[]);arr.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});}
+    else{G.teams[0].players=arr;}
     renderLobbyView();
   });
-  // Register host as first player
-  lobbyRef.child('players/'+G.playerNumber).set({
-    name:G.name, number:G.playerNumber, kills:0, alive:true,
-    lives:CFG.lives, teamIdx:G.myTeam, isHost:true
-  });
+  lobbyRef.child('players/'+G.playerNumber).set({name:G.name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:true});
 }
 
-function joinLobbyFirebase(code, name) {
-  if (!db) return;
-  lobbyRef = db.ref('lobbies/'+code);
-  lobbyRef.once('value', snap => {
-    const data = snap.val();
-    if (!data) { toast('Lobby niet gevonden — controleer de code','red'); go('s-join'); return; }
-    // Load lobby settings
-    Object.assign(CFG, data.cfg);
-    CENTER = data.center || CENTER;
-    MAX_RADIUS = data.radius || MAX_RADIUS;
-    G.lives = CFG.lives; G.maxLives = CFG.lives;
-    G.graceRemaining = CFG.gracePeriodMin*60; G.graceActive=true;
-    // Assign team for joiner
-    if (CFG.mode==='teams') {
-      // Find team with fewest players
-      const existingPlayers = data.players ? Object.values(data.players) : [];
-      const teamCounts = Array(CFG.numTeams).fill(0);
-      existingPlayers.forEach(p => { if(p.teamIdx<CFG.numTeams) teamCounts[p.teamIdx]++; });
-      G.myTeam = teamCounts.indexOf(Math.min(...teamCounts));
-    } else {
-      G.myTeam = 0;
-    }
-    // Register this player in Firebase
-    lobbyRef.child('players/'+G.playerNumber).set({
-      name:name, number:G.playerNumber, kills:0, alive:true,
-      lives:CFG.lives, teamIdx:G.myTeam, isHost:false
-    });
-    // Remove player when they disconnect
+function joinLobbyFirebase(code,name){
+  if(!db)return;
+  lobbyRef=db.ref('lobbies/'+code);
+  lobbyRef.once('value',snap=>{
+    const data=snap.val();
+    if(!data){toast('Lobby niet gevonden — controleer de code','red');go('s-join');return;}
+    Object.assign(CFG,data.cfg);
+    CENTER=data.center||CENTER;
+    MAX_RADIUS=data.radius||MAX_RADIUS;
+    G.lives=CFG.lives;G.maxLives=CFG.lives;
+    G.graceRemaining=CFG.gracePeriodMin*60;G.graceActive=true;
+    if(CFG.mode==='teams'){
+      const existingPlayers=data.players?Object.values(data.players):[];
+      const teamCounts=Array(CFG.numTeams).fill(0);
+      existingPlayers.forEach(p=>{if(p.teamIdx<CFG.numTeams)teamCounts[p.teamIdx]++;});
+      G.myTeam=teamCounts.indexOf(Math.min(...teamCounts));
+    }else{G.myTeam=0;}
+    lobbyRef.child('players/'+G.playerNumber).set({name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:false});
     lobbyRef.child('players/'+G.playerNumber).onDisconnect().remove();
-    // Listen for all players
-    lobbyRef.child('players').on('value', snap => {
-      const players = snap.val();
-      if (!players) return;
-      const arr = Object.values(players);
-      if (CFG.mode==='teams') {
-        G.teams = CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
-        arr.forEach(p => { const ti=p.teamIdx||0; if(G.teams[ti]) G.teams[ti].players.push(p); });
-      } else {
-        if (!G.teams.length) G.teams=[{name:'FFA',color:0,players:[]}];
-        G.teams[0].players = arr;
-      }
-      renderLobbyView(); renderLobbySettings();
+    lobbyRef.child('players').on('value',snap=>{
+      const players=snap.val(); if(!players)return;
+      const arr=Object.values(players);
+      if(CFG.mode==='teams'){G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));arr.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});}
+      else{if(!G.teams.length)G.teams=[{name:'FFA',color:0,players:[]}];G.teams[0].players=arr;}
+      renderLobbyView();renderLobbySettings();
     });
-    // Listen for game start
-    lobbyRef.child('started').on('value', snap => {
-      if (snap.val()===true && !G.gameStarted) {
-        G.gameStarted=true;
-        startGame();
-      }
-    });
-    // Listen for player state changes (kills, eliminated)
-    lobbyRef.child('gameState').on('value', snap => {
-      const state = snap.val();
-      if (!state) return;
-      if (state.players) {
-        Object.entries(state.players).forEach(([num,data]) => {
-          allPlayers().forEach(p => {
-            if (p.number===num) { p.lives=data.lives; p.alive=data.alive; }
-          });
-        });
-        updAlive();
-      }
+    lobbyRef.child('started').on('value',snap=>{if(snap.val()===true&&!G.gameStarted){G.gameStarted=true;startGame();}});
+    lobbyRef.child('gameState').on('value',snap=>{
+      const state=snap.val(); if(!state)return;
+      if(state.players){Object.entries(state.players).forEach(([num,data])=>{allPlayers().forEach(p=>{if(p.number===num){p.lives=data.lives;p.alive=data.alive;}});});updAlive();}
     });
   });
 }
 
-function syncKillToFirebase(targetName, targetNum) {
-  if (!db || !lobbyRef) return;
-  // Update target's state in Firebase
-  lobbyRef.child('gameState/players/'+targetNum).set({ alive:false, lives:0 });
-  // Update killer's kill count
-  lobbyRef.child('players/'+G.playerNumber+'/kills').transaction(k => (k||0)+1);
-  lobbyRef.child('kills').push({ by:G.name, target:targetName, number:targetNum, ts:Date.now() });
+function syncKillToFirebase(targetName,targetNum){
+  if(!db||!lobbyRef)return;
+  lobbyRef.child('gameState/players/'+targetNum).set({alive:false,lives:0});
+  lobbyRef.child('players/'+G.playerNumber+'/kills').transaction(k=>(k||0)+1);
+  lobbyRef.child('kills').push({by:G.name,target:targetName,number:targetNum,ts:Date.now()});
 }
 
-function syncGameStartToFirebase() {
-  if (!db || !lobbyRef) return;
+function syncGameStartToFirebase(){
+  if(!db||!lobbyRef)return;
   lobbyRef.child('started').set(true);
 }
 
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // INIT
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 initFirebase();
-renderPUToggles(); renderRulesPU(); updTeamNames(); updTeamSummary(); updGrace(); updRadius(); updSettingsPreview(); renderLobbyView(); renderLobbySettings();
+renderPUToggles();renderRulesPU();updTeamNames();updTeamSummary();updGrace();updRadius();updSettingsPreview();renderLobbyView();renderLobbySettings();
 </script>
 </body>
 </html>
