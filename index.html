@@ -82,8 +82,8 @@ body{
 .btn-danger{background:rgba(244,63,94,.15);color:var(--rose);border:1px solid rgba(244,63,94,.25)}
 .btn-danger:hover{background:rgba(244,63,94,.22)}
 .btn-success{background:var(--emerald-muted);color:var(--emerald);border:1px solid rgba(16,185,129,.25)}
-.btn-blue{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
-.btn-blue:hover{background:rgba(59,130,246,.25)}
+.btn-blue{background:rgba(255,255,255,.06);color:var(--zinc-300);border:1px solid rgba(255,255,255,.13)}
+.btn-blue:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.22)}
 .btn-sm{padding:8px 14px;font-size:.8rem;border-radius:9px;width:auto}
 
 /* ── BACK BUTTON ── */
@@ -439,12 +439,12 @@ select option{background:var(--zinc-900)}
   </div>
 
   <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem">
-    <button class="btn btn-primary" onclick="go('s-create')">
+    <button class="btn btn-primary" onclick="go('s-join')">Lobby joinen</button>
+    <button class="btn btn-ghost" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
+    <button class="btn btn-blue" onclick="go('s-create')">
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M12 4v16M4 12h16"/></svg>
       Lobby aanmaken
     </button>
-    <button class="btn btn-blue" onclick="go('s-join')">Lobby joinen</button>
-    <button class="btn btn-ghost" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
     <button class="btn btn-danger" onclick="go('s-admin-login')">Admin paneel</button>
   </div>
 </div>
