@@ -82,6 +82,8 @@ body{
 .btn-danger{background:rgba(244,63,94,.15);color:var(--rose);border:1px solid rgba(244,63,94,.25)}
 .btn-danger:hover{background:rgba(244,63,94,.22)}
 .btn-success{background:var(--emerald-muted);color:var(--emerald);border:1px solid rgba(16,185,129,.25)}
+.btn-blue{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.btn-blue:hover{background:rgba(59,130,246,.25)}
 .btn-sm{padding:8px 14px;font-size:.8rem;border-radius:9px;width:auto}
 
 /* ── BACK BUTTON ── */
@@ -362,7 +364,7 @@ select option{background:var(--zinc-900)}
 /* ── PU DETAIL ROW ── */
 .pu-detail-row{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem 0;border-bottom:1px solid var(--zinc-800)}
 .pu-detail-row:last-child{border-bottom:none}
-.pu-detail-icon{font-size:1.1rem;margin-top:1px;flex-shrink:0;width:24px;display:flex;align-items:center;justify-content:center}
+.pu-detail-icon{font-size:1.1rem;margin-top:1px;flex-shrink:0;width:24px;display:flex;align-items:center;justify-content:center;color:var(--rose)}
 .pu-detail-icon svg{width:18px;height:18px}
 .pu-detail-name{font-size:.85rem;font-weight:600;color:var(--zinc-200)}
 .pu-detail-desc{font-size:.75rem;color:var(--zinc-500);margin-top:1px;line-height:1.45}
@@ -441,9 +443,9 @@ select option{background:var(--zinc-900)}
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M12 4v16M4 12h16"/></svg>
       Lobby aanmaken
     </button>
-    <button class="btn btn-ghost" onclick="go('s-join')">Lobby joinen</button>
+    <button class="btn btn-blue" onclick="go('s-join')">Lobby joinen</button>
     <button class="btn btn-ghost" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
-    <button class="btn btn-danger" onclick="go('s-admin')">Admin paneel</button>
+    <button class="btn btn-danger" onclick="go('s-admin-login')">Admin paneel</button>
   </div>
 </div>
 
@@ -810,6 +812,36 @@ select option{background:var(--zinc-900)}
   <div id="tab-lb-content" style="display:none"><div id="lb-list"></div></div>
 </div>
 
+<!-- ══════════════════════ ADMIN LOGIN ══════════════════════ -->
+<div class="screen" id="s-admin-login">
+  <div class="screen-header">
+    <button class="btn-back" onclick="go('s-home')">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
+      Home
+    </button>
+  </div>
+  <div class="title">Admin toegang</div>
+  <div class="body-sm">Log in met de naam van de host en de lobby code om het admin paneel te openen.</div>
+
+  <div class="surface" style="display:flex;flex-direction:column;gap:.75rem">
+    <div class="input-group">
+      <label class="input-label">Naam van de host</label>
+      <input id="admin-login-name" placeholder="bijv. Daan" maxlength="20"/>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Lobby code</label>
+      <input id="admin-login-code" placeholder="DAA42" maxlength="5"
+        style="text-transform:uppercase;letter-spacing:6px;font-size:1.3rem;font-family:var(--f-mono);font-weight:700"/>
+    </div>
+  </div>
+
+  <div id="admin-login-error" class="alert alert-danger" style="display:none">
+    Ongeldige naam of code — alleen de host kan inloggen.
+  </div>
+
+  <button class="btn btn-primary" onclick="adminLogin()">Inloggen als admin</button>
+</div>
+
 <!-- ══════════════════════ ADMIN ══════════════════════ -->
 <div class="screen" id="s-admin">
   <div class="screen-header">
@@ -969,10 +1001,20 @@ function allPlayers(){return G.teams.flatMap((t,ti)=>t.players.map(p=>({...p,tea
 function getEnabledPUs(){return Object.keys(ALL_POWERUPS).filter(k=>CFG.enabledPU[k]&&(k!=='revive'||CFG.mode==='teams'));}
 function generatePlayerNumber(idx){const base=10000+idx*7+Math.floor(Math.random()*100);return String(base).slice(0,5).padStart(5,'0');}
 
+function stopGame(){
+  [tPulse,tZoneRot,tZoneIn,tGame,tGrace,tOutside].forEach(clearInterval);
+  tPulse=tZoneRot=tZoneIn=tGame=tGrace=tOutside=null;
+  if(watchId!==null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}watchId=null;}
+  if(map){map.remove();map=null;myMarker=null;otherMarkers=[];puCircles=[];puMarkers=[];zoneCircle=null;deadOverlay=null;redBorderCircle=null;}
+  G.gameStarted=false;
+}
+
 function go(id) {
+  const prev=document.querySelector('.screen.active')?.id;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
+  if(prev==='s-game'&&id!=='s-game') stopGame();
   if (id==='s-game') {
     setTimeout(()=>{if(!map)initMap();else map.invalidateSize();},300);
     setTimeout(()=>{if(map)map.invalidateSize();},800);
@@ -1570,6 +1612,51 @@ function renderAdmin(){
   const log=document.getElementById('admin-log');if(log)log.innerHTML=G.adminLog.slice(-8).reverse().map(l=>`<div style="padding:2px 0;border-bottom:1px solid var(--zinc-800)">${l}</div>`).join('');
 }
 
+function adminLogin(){
+  const n=document.getElementById('admin-login-name').value.trim();
+  const c=document.getElementById('admin-login-code').value.trim().toUpperCase();
+  const errEl=document.getElementById('admin-login-error');
+  if(!n||!c){toast('Vul naam en code in','red');return;}
+  errEl.style.display='none';
+
+  // Zelfde apparaat als host
+  if(G.isHost&&G.name.toLowerCase()===n.toLowerCase()&&G.lobby===c){go('s-admin');return;}
+
+  // Verifieer via Firebase
+  if(!DEMO_MODE&&db){
+    db.ref('lobbies/'+c).once('value',snap=>{
+      const data=snap.val();
+      if(!data){errEl.style.display='block';return;}
+      const players=data.players?Object.values(data.players):[];
+      const host=players.find(p=>p.isHost&&p.name.toLowerCase()===n.toLowerCase());
+      if(!host){errEl.style.display='block';return;}
+      // Laad lobby in admin-state
+      G.lobby=c; G.name=n; G.isHost=true;
+      lobbyRef=db.ref('lobbies/'+c);
+      Object.assign(CFG,data.cfg||{});
+      if(CFG.mode==='teams'){
+        G.teams=(CFG.teamNames||[]).slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
+        players.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});
+      }else{
+        G.teams=[{name:'FFA',color:0,players:[...players]}];
+      }
+      G.maxLives=CFG.lives||1;
+      // Luister naar live updates
+      lobbyRef.child('players').on('value',snap2=>{
+        const ps=snap2.val();if(!ps)return;
+        const arr=Object.values(ps);
+        if(CFG.mode==='teams'){G.teams=(CFG.teamNames||[]).slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));arr.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});}
+        else{G.teams=[{name:'FFA',color:0,players:arr}];}
+        renderAdmin();
+      });
+      go('s-admin');
+    });
+  }else{
+    errEl.style.display='block';
+    toast('Firebase niet beschikbaar in demo modus','red');
+  }
+}
+
 function adminRevive(ti,pi){G.teams[ti].players[pi].alive=true;G.teams[ti].players[pi].lives=Math.max(1,Math.floor(G.maxLives/2));addLog(G.teams[ti].players[pi].name+' herleefd');toast(G.teams[ti].players[pi].name+' herleefd!','green');playSound('powerup');updAlive();renderAdmin();}
 function adminElim(ti,pi){G.teams[ti].players[pi].alive=false;G.teams[ti].players[pi].lives=0;addLog(G.teams[ti].players[pi].name+' geëlimineerd');toast(G.teams[ti].players[pi].name+' geëlimineerd','red');playSound('kill');updAlive();renderAdmin();}
 function adminTriggerPulse(){addLog('Admin: pulse');triggerPulse();}
@@ -1605,13 +1692,31 @@ function joinLobbyFirebase(code,name){
     MAX_RADIUS=data.radius||MAX_RADIUS;
     G.lives=CFG.lives;G.maxLives=CFG.lives;
     G.graceRemaining=CFG.gracePeriodMin*60;G.graceActive=true;
+
+    // Bepaal team en bouw G.teams direct op vanuit snapshot
+    const existingPlayers=data.players?Object.values(data.players):[];
     if(CFG.mode==='teams'){
-      const existingPlayers=data.players?Object.values(data.players):[];
       const teamCounts=Array(CFG.numTeams).fill(0);
       existingPlayers.forEach(p=>{if(p.teamIdx<CFG.numTeams)teamCounts[p.teamIdx]++;});
       G.myTeam=teamCounts.indexOf(Math.min(...teamCounts));
-    }else{G.myTeam=0;}
-    lobbyRef.child('players/'+G.playerNumber).set({name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:false});
+      G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
+      existingPlayers.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});
+    }else{
+      G.myTeam=0;
+      G.teams=[{name:'FFA',color:0,players:[...existingPlayers]}];
+    }
+
+    // Voeg zichzelf direct toe zodat de lobby meteen klopt
+    const selfData={name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:false};
+    const alreadyIn=existingPlayers.some(p=>p.number===G.playerNumber);
+    if(!alreadyIn){
+      if(CFG.mode==='teams'){if(G.teams[G.myTeam])G.teams[G.myTeam].players.push(selfData);}
+      else{G.teams[0].players.push(selfData);}
+    }
+    renderLobbyView();renderLobbySettings();
+
+    // Schrijf naar Firebase en stel realtime-listener in
+    lobbyRef.child('players/'+G.playerNumber).set(selfData);
     lobbyRef.child('players/'+G.playerNumber).onDisconnect().remove();
     lobbyRef.child('players').on('value',snap=>{
       const players=snap.val(); if(!players)return;
