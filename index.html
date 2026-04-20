@@ -1238,10 +1238,11 @@ function joinLobby(){
   if(!n||!c){toast('Vul naam en code in','red');return;}
   G.name=n; G.lobby=c;
   G.playerNumber=String(10000+Math.floor(Math.random()*89999));
+  G.teams=[{name:'FFA',color:0,players:[]}];
   document.getElementById('lc-display').textContent=c;
   if(!DEMO_MODE&&db){joinLobbyFirebase(c,n);}
   else{renderLobbyView();renderLobbySettings();}
-  go('s-lobby'); toast('Gejoined!','green');
+  go('s-lobby'); renderLobbyView(); toast('Gejoined!','green');
 }
 
 function renderLobbyView(){
@@ -1616,7 +1617,7 @@ function joinLobbyFirebase(code,name){
       const players=snap.val(); if(!players)return;
       const arr=Object.values(players);
       if(CFG.mode==='teams'){G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));arr.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});}
-      else{if(!G.teams.length)G.teams=[{name:'FFA',color:0,players:[]}];G.teams[0].players=arr;}
+      else{G.teams=[{name:'FFA',color:0,players:arr}];}
       renderLobbyView();renderLobbySettings();
     });
     lobbyRef.child('started').on('value',snap=>{if(snap.val()===true&&!G.gameStarted){G.gameStarted=true;startGame();}});
