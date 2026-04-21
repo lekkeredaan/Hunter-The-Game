@@ -732,6 +732,7 @@ select option{background:var(--zinc-900)}
       <button class="nav-tab active" id="tab-map" onclick="switchTab('map')">Kaart</button>
       <button class="nav-tab" id="tab-enter" onclick="switchTab('enter')">Nummer</button>
       <button class="nav-tab" id="tab-lb" onclick="switchTab('lb')">Score</button>
+      <button class="nav-tab" id="tab-admin-btn" onclick="go('s-admin')" style="display:none;color:var(--amber)">Admin</button>
     </div>
   </div>
 
@@ -845,9 +846,9 @@ select option{background:var(--zinc-900)}
 <!-- ══════════════════════ ADMIN ══════════════════════ -->
 <div class="screen" id="s-admin">
   <div class="screen-header">
-    <button class="btn-back" onclick="go('s-home')">
+    <button class="btn-back" onclick="map ? go('s-game') : go('s-home')">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
-      Home
+      <span id="admin-back-lbl">Home</span>
     </button>
     <span class="badge badge-host screen-header-right">HOST</span>
   </div>
@@ -1014,7 +1015,8 @@ function go(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  if(prev==='s-game'&&id!=='s-game') stopGame();
+  if(prev==='s-game'&&id!=='s-game'&&id!=='s-admin') stopGame();
+  const abl=document.getElementById('admin-back-lbl');if(abl)abl.textContent=map?'Terug naar spel':'Home';
   if (id==='s-game') {
     setTimeout(()=>{if(!map)initMap();else map.invalidateSize();},300);
     setTimeout(()=>{if(map)map.invalidateSize();},800);
@@ -1334,6 +1336,7 @@ function startGame(){
   if(gta)gta.textContent=CFG.mode==='teams'?G.teams.filter(t=>t.players.some(p=>p.alive)).length:'—';
   document.getElementById('g-alive').textContent=allPlayers().filter(p=>p.alive).length;
   renderPU();startTimers();
+  const adminTab=document.getElementById('tab-admin-btn');if(adminTab)adminTab.style.display=G.isHost?'':'none';
   if(!DEMO_MODE&&db&&G.isHost)syncGameStartToFirebase();
   go('s-number');
 }
