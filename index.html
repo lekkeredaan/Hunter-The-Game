@@ -1045,7 +1045,7 @@ let G = {
   gameElapsedS:0, gameTotalS:3600, pulseS:600, zoneRotS:900, inZoneS:0, activeZoneIdx:0,
   outsideS:0, isOutside:false,
   graceRemaining:300, graceActive:true,
-  gpsLat:null, gpsLng:null, gameStarted:false,
+  gpsLat:null, gpsLng:null, gameStarted:false, gameStartTimestamp:null,
   teams:[
     {name:'Team Rood', color:0, players:[{name:'Daan',number:'11234',kills:2,alive:true,lives:1},{name:'Emma',number:'12345',kills:0,alive:true,lives:1},{name:'Sander',number:'13456',kills:1,alive:true,lives:1,hasShield:true}]},
     {name:'Team Blauw',color:1, players:[{name:'Lisa',number:'21234',kills:3,alive:true,lives:1},{name:'Tom',number:'22345',kills:1,alive:true,lives:1},{name:'Noor',number:'23456',kills:2,alive:false,lives:0}]},
@@ -1075,6 +1075,7 @@ function go(id) {
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
   if(prev==='s-game'&&id!=='s-game'&&id!=='s-admin') stopGame();
+  if(id==='s-home'){clearSession();G.gameStartTimestamp=null;}
   const abl=document.getElementById('admin-back-lbl');if(abl)abl.textContent=map?'Terug naar spel':'Home';
   if (id==='s-game') {
     setTimeout(()=>{if(!map)initMap();else map.invalidateSize();},300);
@@ -1308,7 +1309,7 @@ function createLobby(){
     document.getElementById('g-area').textContent=G.area;
     if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
     if(!DEMO_MODE&&db)syncLobbyToFirebase();
-    renderLobbyView();renderLobbySettings();go('s-lobby');
+    renderLobbyView();renderLobbySettings();go('s-lobby');saveSession();
   }
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
@@ -1380,6 +1381,7 @@ function renderLobbySettings(){
 // START GAME
 // ══════════════════════════════════════════════════════
 function startGame(){
+  if(!G.gameStartTimestamp) G.gameStartTimestamp=Date.now();
   G.gameTotalS=CFG.gameDurMin*60; G.pulseS=CFG.pulseIntervalMin*60; G.zoneRotS=CFG.zoneRotMin*60; G.gameElapsedS=0;
   G.lives=CFG.lives; G.maxLives=CFG.lives;
   G.graceRemaining=CFG.gracePeriodMin*60; G.graceActive=true;
@@ -1778,7 +1780,7 @@ function joinLobbyFirebase(code,name){
       if(CFG.mode==='teams'){if(G.teams[G.myTeam])G.teams[G.myTeam].players.push(selfData);}
       else{G.teams[0].players.push(selfData);}
     }
-    renderLobbyView();renderLobbySettings();
+    renderLobbyView();renderLobbySettings();saveSession();
 
     // Schrijf naar Firebase en stel realtime-listener in
     lobbyRef.child('players/'+G.playerNumber).set(selfData);
@@ -1811,10 +1813,111 @@ function syncGameStartToFirebase(){
 }
 
 // ══════════════════════════════════════════════════════
+// SESSION PERSISTENCE
+// ══════════════════════════════════════════════════════
+const SESSION_KEY='hunter_sess';
+
+function saveSession(){
+  if(DEMO_MODE)return;
+  try{
+    localStorage.setItem(SESSION_KEY,JSON.stringify({
+      lobby:G.lobby, name:G.name, playerNumber:G.playerNumber,
+      isHost:G.isHost, myTeam:G.myTeam, area:G.area,
+      gameStarted:G.gameStarted,
+      gameStartTimestamp:G.gameStartTimestamp||null,
+      gameTotalS:G.gameTotalS,
+      ts:Date.now()
+    }));
+  }catch(e){}
+}
+
+function clearSession(){
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+}
+
+function tryRestoreSession(){
+  if(DEMO_MODE||!db)return;
+  let s;
+  try{const r=localStorage.getItem(SESSION_KEY);if(!r)return;s=JSON.parse(r);}
+  catch(e){clearSession();return;}
+  // Verwijder sessies ouder dan 8 uur
+  if(!s.lobby||!s.name||Date.now()-s.ts>8*60*60*1000){clearSession();return;}
+
+  lobbyRef=db.ref('lobbies/'+s.lobby);
+  lobbyRef.once('value',snap=>{
+    const data=snap.val();
+    if(!data){clearSession();toast('Vorige lobby is niet meer actief','red');return;}
+
+    // Herstel identiteit
+    G.name=s.name; G.lobby=s.lobby; G.playerNumber=s.playerNumber;
+    G.isHost=s.isHost; G.myTeam=s.myTeam||0; G.area=s.area||'';
+    Object.assign(CFG,data.cfg||{});
+    CENTER=data.center||CENTER;
+    MAX_RADIUS=CFG.radiusMeters;
+
+    // Bouw teams op uit Firebase
+    const arr=data.players?Object.values(data.players):[];
+    if(CFG.mode==='teams'){
+      G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
+      arr.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});
+    }else{
+      G.teams=[{name:'FFA',color:0,players:arr}];
+    }
+
+    // Herstel eigen stats
+    const me=arr.find(p=>p.number===s.playerNumber);
+    if(me){G.lives=me.lives;G.alive=me.alive!==false;G.kills=me.kills||0;}
+    else{
+      const self={name:G.name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:G.isHost};
+      if(G.teams[G.myTeam])G.teams[G.myTeam].players.push(self);
+      lobbyRef.child('players/'+G.playerNumber).set(self);
+    }
+
+    try{document.getElementById('lc-display').textContent=G.lobby;}catch(e){}
+    try{document.getElementById('g-area').textContent=G.area;}catch(e){}
+
+    // Zet Firebase-listeners op
+    lobbyRef.child('players').on('value',snap2=>{
+      const d=snap2.val();if(!d)return;
+      const all=Object.values(d);
+      if(CFG.mode==='teams'){G.teams.forEach(t=>t.players=[]);all.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});}
+      else{G.teams[0].players=all;}
+      if(!G.gameStarted)renderLobbyView();
+    });
+    lobbyRef.child('started').on('value',snap2=>{
+      if(snap2.val()===true&&!G.gameStarted){G.gameStarted=true;startGame();}
+    });
+    lobbyRef.child('gameState').on('value',snap2=>{
+      const state=snap2.val();if(!state)return;
+      if(state.players){Object.entries(state.players).forEach(([num,pd])=>{allPlayers().forEach(p=>{if(p.number===num){p.lives=pd.lives;p.alive=pd.alive;}});});updAlive();}
+    });
+
+    if(data.started===true){
+      // Midden in het spel — bereken verstreken tijd
+      const elapsed=s.gameStartTimestamp
+        ?Math.min(Math.floor((Date.now()-s.gameStartTimestamp)/1000),(s.gameTotalS||CFG.gameDurMin*60)-5)
+        :0;
+      G.gameStartTimestamp=s.gameStartTimestamp;
+      G.gameStarted=false;
+      startGame();
+      G.gameElapsedS=elapsed; // override na reset door startGame
+      setTimeout(()=>go('s-game'),100);
+      toast('Welkom terug — spel loopt nog!','green');
+    }else{
+      renderLobbyView();renderLobbySettings();
+      go('s-lobby');
+      toast('Terug in de lobby!','green');
+    }
+    saveSession();
+  });
+}
+
+// ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
 initFirebase();
 renderPUToggles();renderRulesPU();updTeamNames();updTeamSummary();updGrace();updRadius();updSettingsPreview();renderLobbyView();renderLobbySettings();
+tryRestoreSession();
 </script>
 </body>
 </html>
