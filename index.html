@@ -466,6 +466,20 @@ select option{background:var(--zinc-900)}
 <div class="toast-container" id="toasts"></div>
 <div class="pu-tooltip" id="pu-tooltip"></div>
 
+<!-- ── SHIELD HIT OVERLAY ── -->
+<div id="shield-hit-overlay" style="display:none;position:fixed;inset:0;z-index:9997;background:rgba(9,9,11,.93);backdrop-filter:blur(8px);flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;padding:2rem;text-align:center">
+  <div style="width:88px;height:88px;border-radius:50%;background:rgba(59,130,246,.15);border:2px solid rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(59,130,246,.3)">
+    <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#3b82f6" stroke-width="1.8"><path stroke-linecap="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+  </div>
+  <div style="font-size:2.4rem;font-weight:900;letter-spacing:-1px;color:#3b82f6;text-shadow:0 0 40px rgba(59,130,246,.5)">SCHILD ACTIEF</div>
+  <div style="font-size:.95rem;color:var(--zinc-400);line-height:1.6">Je schild heeft je beschermd.<br>Gescand door <strong id="shield-hit-attacker" style="color:var(--zinc-200)">een tegenstander</strong>.</div>
+  <div style="font-family:var(--f-mono);font-size:4rem;font-weight:700;color:#3b82f6;line-height:1;font-variant-numeric:tabular-nums" id="shield-grace-timer">30</div>
+  <div style="font-size:.8rem;color:var(--zinc-500);letter-spacing:.5px">seconden om weg te komen</div>
+  <div style="width:100%;max-width:300px;height:4px;background:var(--zinc-800);border-radius:2px;overflow:hidden;margin-top:.5rem">
+    <div id="shield-grace-bar" style="height:100%;background:#3b82f6;border-radius:2px;width:100%;transition:width 1s linear"></div>
+  </div>
+</div>
+
 <div id="pu-map-popup" style="display:none" class="pu-map-overlay" onclick="if(event.target===this)closePUMapPopup()">
   <div class="pu-map-card">
     <button class="pu-map-close" onclick="closePUMapPopup()">
@@ -1045,7 +1059,7 @@ let G = {
   gameElapsedS:0, gameTotalS:3600, pulseS:600, zoneRotS:900, inZoneS:0, activeZoneIdx:0,
   outsideS:0, isOutside:false,
   graceRemaining:300, graceActive:true,
-  gpsLat:null, gpsLng:null, gameStarted:false, gameStartTimestamp:null,
+  gpsLat:null, gpsLng:null, gameStarted:false, gameStartTimestamp:null, shieldGrace:0,
   teams:[
     {name:'Team Rood', color:0, players:[{name:'Daan',number:'11234',kills:2,alive:true,lives:1},{name:'Emma',number:'12345',kills:0,alive:true,lives:1},{name:'Sander',number:'13456',kills:1,alive:true,lives:1,hasShield:true}]},
     {name:'Team Blauw',color:1, players:[{name:'Lisa',number:'21234',kills:3,alive:true,lives:1},{name:'Tom',number:'22345',kills:1,alive:true,lives:1},{name:'Noor',number:'23456',kills:2,alive:false,lives:0}]},
@@ -1107,6 +1121,11 @@ function playSound(type){
     else if(type==='kill'){o.type='square';o.frequency.setValueAtTime(200,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(60,ctx.currentTime+.3);g.gain.setValueAtTime(.15,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.35);o.start();o.stop(ctx.currentTime+.35);}
     else if(type==='powerup'){[523,659,784,1046].forEach((f,i)=>{const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.frequency.value=f;g2.gain.setValueAtTime(.15,ctx.currentTime+i*.1);g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.1+.15);o2.start(ctx.currentTime+i*.1);o2.stop(ctx.currentTime+i*.1+.2);});return;}
     else if(type==='eliminated'){o.type='sawtooth';o.frequency.setValueAtTime(300,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(50,ctx.currentTime+1);g.gain.setValueAtTime(.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+1.1);o.start();o.stop(ctx.currentTime+1.1);}
+    else if(type==='shield'){
+      // Metallic deflect + rising chord
+      [300,500,800,1200].forEach((f,i)=>{const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.type='triangle';o2.frequency.setValueAtTime(f,ctx.currentTime+i*.07);o2.frequency.exponentialRampToValueAtTime(f*1.4,ctx.currentTime+i*.07+.18);g2.gain.setValueAtTime(.18,ctx.currentTime+i*.07);g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.07+.28);o2.start(ctx.currentTime+i*.07);o2.stop(ctx.currentTime+i*.07+.32);});
+      return;
+    }
   }catch(e){}
 }
 
@@ -1540,9 +1559,26 @@ function doEliminate(){
   if(!target){toast('Nummer '+num+' niet gevonden','red');return;}
   if(!target.alive){toast(target.name+' is al geëlimineerd','red');return;}
   if(CFG.mode==='teams'&&target.teamIdx===G.myTeam){toast('Dat is een teamgenoot!','red');return;}
+  // Check persoonlijke grace (schild net geblokkeerd)
+  if(target.shieldGraceUntil&&Date.now()<target.shieldGraceUntil){
+    const rem=Math.ceil((target.shieldGraceUntil-Date.now())/1000);
+    toast(target.name+' is beschermd nog '+rem+'s','red');input.value='';return;
+  }
   const hasShield=target.hasShield;
   const hasPiercing=G.powerups.includes('piercing');
-  if(hasShield&&!hasPiercing){toast(target.name+' heeft een schild!','red');addLog('Scan geblokkeerd: schild op '+target.name);input.value='';return;}
+  if(hasShield&&!hasPiercing){
+    toast(target.name+' heeft een schild — geblokkeerd!','red');
+    addLog('Scan geblokkeerd: schild op '+target.name);
+    // Schild consumeren + slachtoffer notificeren via Firebase
+    G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p)delete p.hasShield;});
+    if(!DEMO_MODE&&db&&lobbyRef){
+      const graceUntil=Date.now()+30000;
+      lobbyRef.child('players/'+num+'/hasShield').remove();
+      lobbyRef.child('players/'+num+'/shieldGraceUntil').set(graceUntil);
+      lobbyRef.child('shieldHits/'+num).set({by:G.name,ts:Date.now()});
+    }
+    input.value='';return;
+  }
   if(hasShield&&hasPiercing){G.powerups[G.powerups.indexOf('piercing')]=null;toast('Piercing shot — schild doorboord!');addLog('Piercing shot op '+target.name);}
   G.kills++;
   G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p){p.lives=Math.max(0,p.lives-1);if(p.lives<=0)p.alive=false;delete p.hasShield;}});
@@ -1797,6 +1833,47 @@ function joinLobbyFirebase(code,name){
       const state=snap.val(); if(!state)return;
       if(state.players){Object.entries(state.players).forEach(([num,data])=>{allPlayers().forEach(p=>{if(p.number===num){p.lives=data.lives;p.alive=data.alive;}});});updAlive();}
     });
+    setupShieldHitListener();
+  });
+}
+
+function handleShieldHit(byName){
+  if(G.shieldGrace>0)return; // Voorkom dubbele triggers
+  G.shieldGrace=30;
+  playSound('shield');
+  const overlay=document.getElementById('shield-hit-overlay');
+  const timerEl=document.getElementById('shield-grace-timer');
+  const barEl=document.getElementById('shield-grace-bar');
+  const attackerEl=document.getElementById('shield-hit-attacker');
+  if(!overlay)return;
+  if(attackerEl)attackerEl.textContent=byName||'een tegenstander';
+  if(timerEl)timerEl.textContent='30';
+  if(barEl){barEl.style.transition='none';barEl.style.width='100%';setTimeout(()=>{barEl.style.transition='width 30s linear';barEl.style.width='0%';},50);}
+  overlay.style.display='flex';
+  // Verwijder eigen schild lokaal
+  const me=allPlayers().find(p=>p.number===G.playerNumber);
+  if(me)delete me.hasShield;
+  const tShield=setInterval(()=>{
+    G.shieldGrace--;
+    if(timerEl)timerEl.textContent=G.shieldGrace;
+    if(G.shieldGrace<=0){
+      clearInterval(tShield);
+      overlay.style.display='none';
+      // Verwijder grace in Firebase zodat scanner weer kan scannen
+      if(!DEMO_MODE&&db&&lobbyRef)lobbyRef.child('players/'+G.playerNumber+'/shieldGraceUntil').remove();
+      toast('Grace voorbij — let op!','red');
+    }
+  },1000);
+}
+
+function setupShieldHitListener(){
+  if(DEMO_MODE||!db||!lobbyRef)return;
+  lobbyRef.child('shieldHits/'+G.playerNumber).on('value',snap=>{
+    const hit=snap.val();
+    if(!hit)return;
+    // Alleen recente hits verwerken (max 15 sec oud)
+    if(Date.now()-hit.ts<15000) handleShieldHit(hit.by);
+    snap.ref.remove();
   });
 }
 
@@ -1891,6 +1968,7 @@ function tryRestoreSession(){
       const state=snap2.val();if(!state)return;
       if(state.players){Object.entries(state.players).forEach(([num,pd])=>{allPlayers().forEach(p=>{if(p.number===num){p.lives=pd.lives;p.alive=pd.alive;}});});updAlive();}
     });
+    setupShieldHitListener();
 
     if(data.started===true){
       // Midden in het spel — bereken verstreken tijd
