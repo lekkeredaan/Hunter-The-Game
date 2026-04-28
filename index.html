@@ -181,8 +181,35 @@ select option{background:var(--zinc-900)}
 .number-team-pill{padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:600}
 
 /* ── MAP ── */
-.map-wrap{border-radius:16px;overflow:hidden;border:1px solid var(--zinc-800);height:260px;position:relative}
+.map-wrap{border-radius:16px;overflow:hidden;border:1px solid var(--zinc-800);height:260px;position:relative;box-shadow:0 4px 24px rgba(0,0,0,.35)}
 #leafmap{height:100%;width:100%}
+
+/* ── LEAFLET DARK THEME ── */
+.leaflet-control-zoom{border:1px solid var(--zinc-700)!important;border-radius:10px!important;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.5)!important}
+.leaflet-control-zoom-in,.leaflet-control-zoom-out{
+  background:var(--zinc-900)!important;color:var(--zinc-300)!important;
+  border-bottom:1px solid var(--zinc-800)!important;
+  font-size:16px!important;line-height:28px!important;width:30px!important;height:30px!important;
+  transition:background .15s,color .15s!important;
+}
+.leaflet-control-zoom-out{border-bottom:none!important}
+.leaflet-control-zoom-in:hover,.leaflet-control-zoom-out:hover{background:var(--zinc-800)!important;color:var(--zinc-50)!important}
+.leaflet-bar a,.leaflet-bar a:hover{background:transparent!important}
+.leaflet-popup-content-wrapper{
+  background:var(--zinc-900)!important;color:var(--zinc-200)!important;
+  border:1px solid var(--zinc-700)!important;border-radius:12px!important;
+  box-shadow:0 8px 32px rgba(0,0,0,.6)!important;
+  font-family:var(--f-display)!important;font-size:.82rem!important;font-weight:500!important;
+}
+.leaflet-popup-tip{background:var(--zinc-900)!important}
+.leaflet-popup-close-button{color:var(--zinc-500)!important;font-size:16px!important;top:6px!important;right:8px!important}
+.leaflet-popup-close-button:hover{color:var(--zinc-100)!important}
+.leaflet-container .leaflet-control-attribution{
+  background:rgba(9,9,11,.75)!important;color:var(--zinc-600)!important;
+  font-size:.6rem!important;backdrop-filter:blur(4px);border-radius:6px 0 0 0!important;
+  border-top:1px solid var(--zinc-800)!important;border-left:1px solid var(--zinc-800)!important;
+}
+.leaflet-container .leaflet-control-attribution a{color:var(--zinc-500)!important}
 
 /* ── STAT GRID ── */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
@@ -1384,7 +1411,10 @@ function initMap(){
   const el=document.getElementById('leafmap'); if(!el) return;
   const zoom=MAX_RADIUS<=200?16:MAX_RADIUS<=500?15:MAX_RADIUS<=1000?14:MAX_RADIUS<=1500?13:12;
   map=L.map('leafmap',{zoomControl:true}).setView([CENTER.lat,CENTER.lng],zoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+    attribution:'&copy; <a href="https://openstreetmap.org">OSM</a> &copy; <a href="https://carto.com">CARTO</a>',
+    subdomains:'abcd',maxZoom:20,maxNativeZoom:19
+  }).addTo(map);
   const myIcon=L.divIcon({html:'<div style="width:14px;height:14px;background:#f43f5e;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 2px #f43f5e"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
   myMarker=L.marker([CENTER.lat,CENTER.lng],{icon:myIcon}).addTo(map).bindPopup('Jij ('+G.name+')');
   function drawZoneMask(r){
