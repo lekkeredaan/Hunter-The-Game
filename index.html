@@ -1114,17 +1114,72 @@ function toast(msg, type='') {
 function playSound(type){
   try{
     const ctx=new(window.AudioContext||window.webkitAudioContext)();
-    const o=ctx.createOscillator(),g=ctx.createGain();
-    o.connect(g);g.connect(ctx.destination);
-    if(type==='pulse'){o.frequency.setValueAtTime(880,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(220,ctx.currentTime+.6);g.gain.setValueAtTime(.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.7);o.start();o.stop(ctx.currentTime+.7);}
-    else if(type==='zone'){o.type='sine';[440,554,659].forEach((f,i)=>o.frequency.setValueAtTime(f,ctx.currentTime+i*.15));g.gain.setValueAtTime(.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.55);o.start();o.stop(ctx.currentTime+.55);}
-    else if(type==='kill'){o.type='square';o.frequency.setValueAtTime(200,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(60,ctx.currentTime+.3);g.gain.setValueAtTime(.15,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.35);o.start();o.stop(ctx.currentTime+.35);}
-    else if(type==='powerup'){[523,659,784,1046].forEach((f,i)=>{const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.frequency.value=f;g2.gain.setValueAtTime(.15,ctx.currentTime+i*.1);g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.1+.15);o2.start(ctx.currentTime+i*.1);o2.stop(ctx.currentTime+i*.1+.2);});return;}
-    else if(type==='eliminated'){o.type='sawtooth';o.frequency.setValueAtTime(300,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(50,ctx.currentTime+1);g.gain.setValueAtTime(.2,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+1.1);o.start();o.stop(ctx.currentTime+1.1);}
+    const t=ctx.currentTime;
+
+    // Helper: oscillator with smooth attack + exponential release
+    function osc(wave,freq,vol,delay,dur,freqEnd){
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type=wave; o.frequency.setValueAtTime(freq,t+delay);
+      if(freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd,t+delay+dur);
+      o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0,t+delay);
+      g.gain.linearRampToValueAtTime(vol,t+delay+0.009);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+delay+dur);
+      o.start(t+delay); o.stop(t+delay+dur+0.05);
+    }
+
+    // Helper: filtered noise burst (impact, click, texture)
+    function noise(freq,Q,vol,delay,dur,shape='bandpass'){
+      const len=Math.floor(ctx.sampleRate*(dur+0.05));
+      const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(len*0.18));
+      const src=ctx.createBufferSource(); src.buffer=buf;
+      const flt=ctx.createBiquadFilter(); flt.type=shape; flt.frequency.value=freq; flt.Q.value=Q;
+      const g=ctx.createGain();
+      src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(vol,t+delay);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+delay+dur);
+      src.start(t+delay); src.stop(t+delay+dur+0.05);
+    }
+
+    if(type==='pulse'){
+      // Sonar ping: sharp high sine that rings out + deep sub thud
+      noise(2500,4,0.15,0,0.02);          // initial click
+      osc('sine',1080,0.24,0.005,0.65,620); // sonar ring
+      osc('sine',50,0.5,0,0.18,28);       // sub thud
+    }
+    else if(type==='zone'){
+      // Access granted: mechanical click → clean tone pair
+      noise(3800,2,0.35,0,0.018);         // mechanism click
+      osc('sine',523,0.14,0.02,0.32);     // base tone
+      osc('sine',784,0.07,0.10,0.22);     // fifth above (harmony)
+    }
+    else if(type==='kill'){
+      // Hard impact: noise punch + low body thud
+      noise(480,0.6,1.1,0,0.10,'lowpass');// punch body
+      noise(2200,3,0.22,0,0.03);          // crack transient
+      osc('sine',85,0.4,0,0.26,32);       // sub thud
+    }
+    else if(type==='powerup'){
+      // Tactical acquired: transient click → two-stage rising sweep
+      noise(3000,3,0.2,0,0.018);          // pick-up click
+      osc('sine',370,0.16,0.01,0.18,600); // first sweep
+      osc('sine',740,0.13,0.17,0.22,940); // second sweep
+      osc('sine',1760,0.06,0.32,0.22);    // shimmer top
+    }
+    else if(type==='eliminated'){
+      // System failure: heavy thud + long descending drone
+      noise(380,0.5,1.4,0,0.10,'lowpass');// heavy impact
+      noise(1800,2,0.18,0,0.04);          // crack
+      osc('sawtooth',130,0.2,0.05,1.15,26); // drone out
+      osc('sine',190,0.10,0,0.65,48);     // tone fading
+    }
     else if(type==='shield'){
-      // Metallic deflect + rising chord
-      [300,500,800,1200].forEach((f,i)=>{const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);o2.type='triangle';o2.frequency.setValueAtTime(f,ctx.currentTime+i*.07);o2.frequency.exponentialRampToValueAtTime(f*1.4,ctx.currentTime+i*.07+.18);g2.gain.setValueAtTime(.18,ctx.currentTime+i*.07);g2.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.07+.28);o2.start(ctx.currentTime+i*.07);o2.stop(ctx.currentTime+i*.07+.32);});
-      return;
+      // Metal deflect: hard crack + energy rising tone
+      noise(5500,4,0.55,0,0.022);         // metallic crack
+      noise(1000,6,0.25,0.01,0.07);       // body impact
+      osc('sine',680,0.18,0.015,0.42,1350); // shield rising tone
     }
   }catch(e){}
 }
