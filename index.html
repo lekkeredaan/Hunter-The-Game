@@ -1075,12 +1075,16 @@ function allPlayers(){return G.teams.flatMap((t,ti)=>t.players.map(p=>({...p,tea
 function getEnabledPUs(){return Object.keys(ALL_POWERUPS).filter(k=>CFG.enabledPU[k]&&(k!=='revive'||CFG.mode==='teams'));}
 function generatePlayerNumber(idx){const base=10000+idx*7+Math.floor(Math.random()*100);return String(base).slice(0,5).padStart(5,'0');}
 
+const scanCooldowns=new Map(); // targetNumber → timestamp laatste succesvolle scan
+const SCAN_COOLDOWN_MS=3*60*1000; // 3 minuten cooldown per target per scanner
+
 function stopGame(){
   [tPulse,tZoneRot,tZoneIn,tGame,tGrace,tOutside].forEach(clearInterval);
   tPulse=tZoneRot=tZoneIn=tGame=tGrace=tOutside=null;
   if(watchId!==null){try{navigator.geolocation.clearWatch(watchId);}catch(e){}watchId=null;}
   if(map){map.remove();map=null;myMarker=null;otherMarkers=[];puCircles=[];puMarkers=[];zoneCircle=null;deadOverlay=null;redBorderCircle=null;}
   G.gameStarted=false;
+  scanCooldowns.clear();
 }
 
 function go(id) {
@@ -1423,7 +1427,13 @@ function joinLobby(){
   go('s-lobby'); renderLobbyView(); toast('Gejoined!','green');
 }
 
+let _renderLobbyTimer=null;
 function renderLobbyView(){
+  // Debounce: voorkomt tientallen DOM-rebuilds per seconde bij 40 spelers
+  clearTimeout(_renderLobbyTimer);
+  _renderLobbyTimer=setTimeout(_doRenderLobbyView,80);
+}
+function _doRenderLobbyView(){
   const el=document.getElementById('lobby-teams-view'); if(!el) return;
   document.getElementById('pc').textContent=allPlayers().length;
   const hb=document.getElementById('lobby-host-badge');if(hb)hb.style.display=G.isHost?'inline-flex':'none';
@@ -1614,17 +1624,24 @@ function doEliminate(){
   if(!target){toast('Nummer '+num+' niet gevonden','red');return;}
   if(!target.alive){toast(target.name+' is al geëlimineerd','red');return;}
   if(CFG.mode==='teams'&&target.teamIdx===G.myTeam){toast('Dat is een teamgenoot!','red');return;}
-  // Check persoonlijke grace (schild net geblokkeerd)
+  // Check schild grace periode
   if(target.shieldGraceUntil&&Date.now()<target.shieldGraceUntil){
     const rem=Math.ceil((target.shieldGraceUntil-Date.now())/1000);
     toast(target.name+' is beschermd nog '+rem+'s','red');input.value='';return;
+  }
+  // Check scanner-cooldown (voorkomt dezelfde code meerdere keren invoeren)
+  const lastScan=scanCooldowns.get(num);
+  if(lastScan&&Date.now()-lastScan<SCAN_COOLDOWN_MS){
+    const remS=Math.ceil((SCAN_COOLDOWN_MS-(Date.now()-lastScan))/1000);
+    const remStr=Math.floor(remS/60)+':'+String(remS%60).padStart(2,'0');
+    toast('Wacht nog '+remStr+' voor je '+target.name+' opnieuw kunt scannen','red');
+    input.value='';return;
   }
   const hasShield=target.hasShield;
   const hasPiercing=G.powerups.includes('piercing');
   if(hasShield&&!hasPiercing){
     toast(target.name+' heeft een schild — geblokkeerd!','red');
     addLog('Scan geblokkeerd: schild op '+target.name);
-    // Schild consumeren + slachtoffer notificeren via Firebase
     G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p)delete p.hasShield;});
     if(!DEMO_MODE&&db&&lobbyRef){
       const graceUntil=Date.now()+30000;
@@ -1637,13 +1654,21 @@ function doEliminate(){
   if(hasShield&&hasPiercing){G.powerups[G.powerups.indexOf('piercing')]=null;toast('Piercing shot — schild doorboord!');addLog('Piercing shot op '+target.name);}
   G.kills++;
   G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p){p.lives=Math.max(0,p.lives-1);if(p.lives<=0)p.alive=false;delete p.hasShield;}});
-  G.teams[G.myTeam].players[0].kills=G.kills;
+  // Bug fix: kills opslaan bij de juiste speler (niet altijd players[0])
+  const myPlayer=allPlayers().find(p=>p.number===G.playerNumber);
+  if(myPlayer)myPlayer.kills=G.kills;
   document.getElementById('g-kills').textContent=G.kills;
+  // Scan-cooldown instellen (3 minuten)
+  scanCooldowns.set(num,Date.now());
   updAlive();playSound('kill');
-  toast(target.name+' (#'+num+') geraakt! +1 kill','red');
-  addLog(target.name+' (#'+num+') geraakt door '+G.name);
+  // Haal bijgewerkte stats op voor Firebase sync
+  const updatedTarget=allPlayers().find(p=>p.number===num);
+  const tLives=updatedTarget?.lives??0;
+  const tAlive=updatedTarget?.alive??false;
+  toast(target.name+' (#'+num+') geraakt'+(tLives>0?' — nog '+tLives+' lev'+(tLives===1?'en':'ens'):' — geëlimineerd')+'!','red');
+  addLog(target.name+' (#'+num+') geraakt door '+G.name+(tAlive?' ('+tLives+' levens over)':' — geëlimineerd'));
   input.value='';renderPU();
-  if(!DEMO_MODE&&db)syncKillToFirebase(target.name,num);
+  if(!DEMO_MODE&&db)syncKillToFirebase(target.name,num,tLives,tAlive);
 }
 
 // ══════════════════════════════════════════════════════
@@ -1932,11 +1957,16 @@ function setupShieldHitListener(){
   });
 }
 
-function syncKillToFirebase(targetName,targetNum){
+function syncKillToFirebase(targetName,targetNum,targetLives,targetAlive){
   if(!db||!lobbyRef)return;
-  lobbyRef.child('gameState/players/'+targetNum).set({alive:false,lives:0});
+  // Sync leven-count zodat adminpanel en andere spelers altijd actuele status zien
+  lobbyRef.child('players/'+targetNum+'/lives').set(targetLives);
+  lobbyRef.child('players/'+targetNum+'/alive').set(targetAlive);
+  lobbyRef.child('gameState/players/'+targetNum).set({alive:targetAlive,lives:targetLives});
+  // Kill-teller voor de scanner
   lobbyRef.child('players/'+G.playerNumber+'/kills').transaction(k=>(k||0)+1);
-  lobbyRef.child('kills').push({by:G.name,target:targetName,number:targetNum,ts:Date.now()});
+  // Kill-log alleen bij volledige eliminatie
+  if(!targetAlive) lobbyRef.child('kills').push({by:G.name,target:targetName,number:targetNum,ts:Date.now()});
 }
 
 function syncGameStartToFirebase(){
