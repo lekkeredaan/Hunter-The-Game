@@ -1085,6 +1085,7 @@ function stopGame(){
   if(map){map.remove();map=null;myMarker=null;otherMarkers=[];puCircles=[];puMarkers=[];zoneCircle=null;deadOverlay=null;redBorderCircle=null;}
   G.gameStarted=false;
   scanCooldowns.clear();
+  playerPositions.clear();
 }
 
 function go(id) {
@@ -1491,6 +1492,35 @@ function startGame(){
 // ══════════════════════════════════════════════════════
 let map=null,myMarker=null,otherMarkers=[],puCircles=[],puMarkers=[],zoneCircle=null,deadOverlay=null,redBorderCircle=null;
 let watchId=null;
+const playerPositions=new Map(); // playerNumber → {lat,lng,ts}
+let _lastPosSyncTime=0,_lastPosSyncLat=null,_lastPosSyncLng=null;
+
+function haversineM(la1,ln1,la2,ln2){
+  const R=6371000,dL=(la2-la1)*Math.PI/180,dN=(ln2-ln1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dN/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function syncPositionToFirebase(lat,lng,force=false){
+  if(DEMO_MODE||!db||!lobbyRef||!G.gameStarted||lat===null)return;
+  const now=Date.now();
+  const dist=(_lastPosSyncLat!==null)?haversineM(lat,lng,_lastPosSyncLat,_lastPosSyncLng):999;
+  if(!force&&now-_lastPosSyncTime<15000&&dist<12)return; // throttle: 15s of <12m
+  _lastPosSyncTime=now;_lastPosSyncLat=lat;_lastPosSyncLng=lng;
+  if(G.powerups.includes('invisible'))return; // invisible: geen positie schrijven
+  lobbyRef.child('positions/'+G.playerNumber).set({lat,lng,ts:now});
+}
+
+function setupPositionListener(){
+  if(DEMO_MODE||!db||!lobbyRef)return;
+  lobbyRef.child('positions').on('value',snap=>{
+    const data=snap.val();
+    playerPositions.clear();
+    if(data)Object.entries(data).forEach(([num,pos])=>{if(pos&&pos.lat)playerPositions.set(num,pos);});
+  });
+  // Ruim eigen positie op bij disconnect
+  lobbyRef.child('positions/'+G.playerNumber).onDisconnect().remove();
+}
 
 function initMap(){
   if(map) return;
@@ -1520,6 +1550,7 @@ function initMap(){
   zoneCircle={_currentR:MAX_RADIUS,_drawZoneMask:drawZoneMask};
   L.circle([CENTER.lat,CENTER.lng],{radius:6,color:'#fff',fillColor:'#fff',fillOpacity:.8,weight:2,interactive:false}).addTo(map);
   renderPUZones();spawnOtherPlayers();
+  setupPositionListener();
   if(navigator.geolocation){
     watchId=navigator.geolocation.watchPosition(pos=>{
       const lat=pos.coords.latitude,lng=pos.coords.longitude;
@@ -1529,6 +1560,7 @@ function initMap(){
       const progress=G.gameElapsedS/G.gameTotalS;
       const currentR=MAX_RADIUS-(MAX_RADIUS-MAX_RADIUS*(CFG.shrinkPct/100))*progress;
       G.isOutside=dist>currentR;
+      syncPositionToFirebase(lat,lng); // throttled background sync
     },()=>{},{enableHighAccuracy:true,maximumAge:5000});
   }
 }
@@ -1583,14 +1615,23 @@ function spawnOtherPlayers(){
   allPlayers().filter(p=>p.number!==G.playerNumber&&p.alive).forEach(p=>{
     const tc=CFG.mode==='teams'?TEAM_COLORS[G.teams[p.teamIdx]?.color||0].dot:'#3b82f6';
     const icon=L.divIcon({html:`<div style="width:10px;height:10px;background:${tc};border-radius:50%;border:2px solid #fff;opacity:0;transition:opacity .3s"></div>`,iconSize:[10,10],iconAnchor:[5,5],className:''});
-    otherMarkers.push(L.marker([CENTER.lat,CENTER.lng],{icon,title:p.name}).addTo(map));
+    const m=L.marker([CENTER.lat,CENTER.lng],{icon,title:p.name}).addTo(map);
+    m._playerNumber=p.number; // zodat showPulse de juiste positie kan opzoeken
+    otherMarkers.push(m);
   });
 }
 
 function showPulse(){
   otherMarkers.forEach(m=>{
+    const num=m._playerNumber;
+    const pos=num?playerPositions.get(String(num)):null;
+    if(pos&&pos.lat){
+      m.setLatLng([pos.lat,pos.lng]);
+    } else {
+      // No real GPS yet — keep marker hidden
+      return;
+    }
     const el=m.getElement();if(el){const d=el.querySelector('div');if(d)d.style.opacity='1';}
-    const ll=m.getLatLng();m.setLatLng([ll.lat+(Math.random()*.004-.002),ll.lng+(Math.random()*.004-.002)]);
   });
   setTimeout(()=>otherMarkers.forEach(m=>{const el=m.getElement();if(el){const d=el.querySelector('div');if(d)d.style.opacity='0';}}),10000);
 }
@@ -1729,7 +1770,12 @@ function startTimers(){
   },1000);
 }
 
-function triggerPulse(){playSound('pulse');toast('PULSE — iedereen 10s zichtbaar!');addLog('Pulse getriggerd');showPulse();}
+function triggerPulse(){
+  playSound('pulse');toast('PULSE — iedereen 10s zichtbaar!');addLog('Pulse getriggerd');
+  // Force-sync own position so others see us too (unless invisible)
+  if(G.gpsLat!==null&&G.gpsLat!==undefined)syncPositionToFirebase(G.gpsLat,G.gpsLng,true);
+  showPulse();
+}
 function rotateZone(){
   G.activeZoneIdx=(G.activeZoneIdx+1)%5;playSound('zone');
   const enabledKeys=getEnabledPUs().filter(k=>k!=='revive');
