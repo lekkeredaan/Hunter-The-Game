@@ -514,10 +514,24 @@ select option{background:var(--zinc-900)}
   <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem">
     <button class="btn btn-primary" onclick="go('s-join')">Lobby joinen</button>
     <button class="btn btn-ghost" style="background:var(--zinc-800);border-color:var(--zinc-700)" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
-    <button class="btn btn-blue" onclick="go('s-create')">
+  </div>
+
+  <div class="surface" style="padding:.85rem 1rem;display:flex;flex-direction:column;gap:.6rem;margin-top:.25rem">
+    <div class="subtitle" style="margin-bottom:.1rem">Spel starten met een code</div>
+    <div class="input-group">
+      <label class="input-label">Toegangscode</label>
+      <input id="access-code-input" placeholder="bijv. AB12-CD34" maxlength="20"
+        style="text-transform:uppercase;letter-spacing:2px;font-family:var(--f-mono);font-weight:700"/>
+    </div>
+    <div id="access-code-error" class="alert alert-danger" style="display:none"></div>
+    <button class="btn btn-blue" onclick="redeemAccessCode()" id="redeem-btn">
       <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M12 4v16M4 12h16"/></svg>
-      Lobby aanmaken
+      Maak mijn spel
     </button>
+    <div class="body-sm" style="color:var(--zinc-500)">Je code is na het invoeren 72 uur geldig. Je wordt automatisch host/admin van je eigen lobby.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
     <button class="btn btn-danger" onclick="go('s-admin-login')">Admin paneel</button>
   </div>
 </div>
@@ -584,6 +598,11 @@ select option{background:var(--zinc-900)}
     <div class="input-group">
       <label class="input-label">Speelgebied <span style="font-weight:400;color:var(--zinc-600)">(wordt getoond in de app)</span></label>
       <input id="ca" placeholder="bijv. Centrum Helmond"/>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Lobbycode <span style="font-weight:400;color:var(--zinc-600)">(optioneel — laat leeg voor automatisch)</span></label>
+      <input id="custom-lobby-code" placeholder="bijv. DAAN1" maxlength="8"
+        style="text-transform:uppercase;letter-spacing:4px;font-family:var(--f-mono);font-weight:700"/>
     </div>
   </div>
 
@@ -993,6 +1012,15 @@ const FIREBASE_CONFIG = {
 let firebaseApp=null, db=null, lobbyRef=null;
 const DEMO_MODE = FIREBASE_CONFIG.apiKey === "JOUW_API_KEY";
 
+// ══════════════════════════════════════════════════════
+// TOEGANGSCODES (verkocht via overkoepelende website)
+// ══════════════════════════════════════════════════════
+const ACCESS_CODE_API = 'https://uitgespeeld.vercel.app/api/codes/verify';
+const ACCESS_CODE_GAME_SLUG = 'hunter-the-game';
+const LOBBY_LIFETIME_MS = 72*60*60*1000; // 72 uur
+// Vaste code voor jezelf: werkt altijd, verloopt nooit, geeft direct admin-toegang.
+const MASTER_ADMIN_CODE = 'DAAN-MASTER';
+
 function initFirebase() {
   if (DEMO_MODE) return;
   try {
@@ -1342,6 +1370,48 @@ function updSettingsPreview(){
   el.innerHTML=items.map(([k,v])=>`<div class="sp-item"><div class="sp-key">${k}</div><div class="sp-val">${v}</div></div>`).join('');
 }
 
+// ══════════════════════════════════════════════════════
+// TOEGANGSCODE VERZILVEREN
+// ══════════════════════════════════════════════════════
+async function redeemAccessCode(){
+  const input=document.getElementById('access-code-input');
+  const code=input.value.trim().toUpperCase();
+  const errEl=document.getElementById('access-code-error');
+  const btn=document.getElementById('redeem-btn');
+  if(errEl)errEl.style.display='none';
+  if(!code){toast('Vul een code in','red');return;}
+
+  if(code===MASTER_ADMIN_CODE){
+    G.accessCode=code; G.codeExpiresAt=null;
+    toast('Mastercode herkend — je bent admin!','green');
+    go('s-create'); return;
+  }
+
+  if(btn){btn.disabled=true;btn.textContent='Controleren...';}
+  try{
+    const res=await fetch(ACCESS_CODE_API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code,gameSlug:ACCESS_CODE_GAME_SLUG})
+    });
+    const data=await res.json();
+    if(data.valid){
+      G.accessCode=code;
+      G.codeExpiresAt=data.expiresAt?new Date(data.expiresAt).getTime():(Date.now()+LOBBY_LIFETIME_MS);
+      const expDate=new Date(G.codeExpiresAt);
+      toast('Code geactiveerd! Geldig tot '+expDate.toLocaleDateString('nl-NL',{day:'numeric',month:'short'})+' '+expDate.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),'green');
+      go('s-create');
+    }else{
+      const msg=data.reason==='expired'?'Deze code is verlopen (72 uur voorbij).':'Ongeldige code — controleer de spelling.';
+      if(errEl){errEl.textContent=msg;errEl.style.display='block';}else toast(msg,'red');
+    }
+  }catch(e){
+    toast('Kon code niet verifiëren — controleer je internetverbinding','red');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='Maak mijn spel';}
+  }
+}
+
 function createLobby(){
   const n=document.getElementById('cn').value.trim(); if(!n){toast('Vul naam in','red');return;}
   CFG.gameDurMin=parseInt(document.getElementById('cd').value);
@@ -1358,7 +1428,6 @@ function createLobby(){
   CFG.teamNames=nameInputs?Array.from(nameInputs.querySelectorAll('input')).map((inp,i)=>inp.value||'Team '+(i+1)):['Team Rood','Team Blauw'];
   Object.keys(ALL_POWERUPS).forEach(k=>{const tog=document.getElementById('pu-tog-'+k);if(tog)CFG.enabledPU[k]=tog.checked;});
   G.name=n; G.isHost=true; G.area=document.getElementById('ca').value.trim()||'Speelgebied';
-  G.lobby=n.toUpperCase().slice(0,3)+(Math.floor(Math.random()*90)+10);
   G.gameTotalS=CFG.gameDurMin*60; G.pulseS=CFG.pulseIntervalMin*60; G.zoneRotS=CFG.zoneRotMin*60;
   G.lives=CFG.lives; G.maxLives=CFG.lives;
   G.graceRemaining=CFG.gracePeriodMin*60; G.graceActive=true;
@@ -1366,37 +1435,60 @@ function createLobby(){
   MAX_RADIUS=CFG.radiusMeters;
   const btn=document.getElementById('create-btn');
   const skipBtn=document.getElementById('skip-gps-btn');
-  if(btn){btn.textContent='GPS ophalen...';btn.disabled=true;}
 
-  // Show "skip" button after 3 seconds in case GPS hangs
-  const skipTimer=setTimeout(()=>{
-    if(skipBtn)skipBtn.style.display='block';
-  },3000);
+  const customCodeInput=document.getElementById('custom-lobby-code');
+  const customCode=customCodeInput?customCodeInput.value.trim().toUpperCase():'';
+  if(customCode&&!/^[A-Z0-9]{3,8}$/.test(customCode)){toast('Lobbycode mag 3-8 letters/cijfers zijn','red');return;}
 
-  function finishLobby(lat,lng){
-    clearTimeout(skipTimer);
-    if(skipBtn)skipBtn.style.display='none';
-    CENTER={lat,lng}; G.gpsLat=lat; G.gpsLng=lng;
-    if(CFG.mode==='teams'){
-      G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
-      G.teams[0].players.push({name:n,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,isHost:true});
-      G.myTeam=0;
-    }else{
-      G.teams=[{name:'FFA',color:0,players:[{name:n,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,isHost:true}]}];
+  function startWithCode(code){
+    G.lobby=code;
+    if(btn){btn.textContent='GPS ophalen...';btn.disabled=true;}
+    // Show "skip" button after 3 seconds in case GPS hangs
+    const skipTimer=setTimeout(()=>{
+      if(skipBtn)skipBtn.style.display='block';
+    },3000);
+
+    function finishLobby(lat,lng){
+      clearTimeout(skipTimer);
+      if(skipBtn)skipBtn.style.display='none';
+      CENTER={lat,lng}; G.gpsLat=lat; G.gpsLng=lng;
+      if(CFG.mode==='teams'){
+        G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));
+        G.teams[0].players.push({name:n,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,isHost:true});
+        G.myTeam=0;
+      }else{
+        G.teams=[{name:'FFA',color:0,players:[{name:n,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,isHost:true}]}];
+      }
+      document.getElementById('lc-display').textContent=G.lobby;
+      document.getElementById('g-area').textContent=G.area;
+      if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
+      if(!DEMO_MODE&&db)syncLobbyToFirebase();
+      renderLobbyView();renderLobbySettings();go('s-lobby');saveSession();
     }
-    document.getElementById('lc-display').textContent=G.lobby;
-    document.getElementById('g-area').textContent=G.area;
-    if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
-    if(!DEMO_MODE&&db)syncLobbyToFirebase();
-    renderLobbyView();renderLobbySettings();go('s-lobby');saveSession();
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        pos=>finishLobby(pos.coords.latitude,pos.coords.longitude),
+        ()=>{toast('GPS niet beschikbaar — standaard locatie gebruikt','red');finishLobby(51.4816,5.6542);},
+        {timeout:5000,maximumAge:30000}
+      );
+    }else{finishLobby(51.4816,5.6542);}
   }
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(
-      pos=>finishLobby(pos.coords.latitude,pos.coords.longitude),
-      ()=>{toast('GPS niet beschikbaar — standaard locatie gebruikt','red');finishLobby(51.4816,5.6542);},
-      {timeout:5000,maximumAge:30000}
-    );
-  }else{finishLobby(51.4816,5.6542);}
+
+  if(customCode&&!DEMO_MODE&&db){
+    if(btn){btn.textContent='Code controleren...';btn.disabled=true;}
+    db.ref('lobbies/'+customCode).once('value').then(snap=>{
+      const existing=snap.val();
+      const expired=existing&&existing.expiresAt&&Date.now()>existing.expiresAt;
+      if(existing&&!expired){
+        toast('Deze lobbycode is al in gebruik — kies een andere','red');
+        if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
+        return;
+      }
+      startWithCode(customCode);
+    });
+    return;
+  }
+  startWithCode(customCode||(n.toUpperCase().slice(0,3)+(Math.floor(Math.random()*90)+10)));
 }
 
 // Called when user taps "Overslaan" during GPS hang
@@ -1899,7 +1991,8 @@ function addLog(msg){const t=new Date();G.adminLog.push(`[${t.getHours()}:${Stri
 function syncLobbyToFirebase(){
   if(!db)return;
   lobbyRef=db.ref('lobbies/'+G.lobby);
-  lobbyRef.set({cfg:CFG,center:CENTER,radius:MAX_RADIUS,teams:G.teams,started:false,ts:Date.now()});
+  const expiresAt=G.codeExpiresAt||(Date.now()+LOBBY_LIFETIME_MS);
+  lobbyRef.set({cfg:CFG,center:CENTER,radius:MAX_RADIUS,teams:G.teams,started:false,ts:Date.now(),expiresAt});
   lobbyRef.child('players').on('value',snap=>{
     const players=snap.val(); if(!players)return;
     const arr=Object.values(players);
@@ -1916,6 +2009,11 @@ function joinLobbyFirebase(code,name){
   lobbyRef.once('value',snap=>{
     const data=snap.val();
     if(!data){toast('Lobby niet gevonden — controleer de code','red');go('s-join');return;}
+    if(data.expiresAt&&Date.now()>data.expiresAt){
+      toast('Deze lobby is verlopen (72 uur voorbij)','red');
+      lobbyRef.remove();
+      go('s-join');return;
+    }
     Object.assign(CFG,data.cfg);
     CENTER=data.center||CENTER;
     MAX_RADIUS=data.radius||MAX_RADIUS;
