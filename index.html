@@ -471,8 +471,8 @@ select option{background:var(--zinc-900)}
   <div style="width:88px;height:88px;border-radius:50%;background:rgba(59,130,246,.15);border:2px solid rgba(59,130,246,.5);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(59,130,246,.3)">
     <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#3b82f6" stroke-width="1.8"><path stroke-linecap="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
   </div>
-  <div style="font-size:2.4rem;font-weight:900;letter-spacing:-1px;color:#3b82f6;text-shadow:0 0 40px rgba(59,130,246,.5)">SCHILD ACTIEF</div>
-  <div style="font-size:.95rem;color:var(--zinc-400);line-height:1.6">Je schild heeft je beschermd.<br>Gescand door <strong id="shield-hit-attacker" style="color:var(--zinc-200)">een tegenstander</strong>.</div>
+  <div style="font-size:2.4rem;font-weight:900;letter-spacing:-1px;color:#3b82f6;text-shadow:0 0 40px rgba(59,130,246,.5)" id="shield-hit-title">SCHILD ACTIEF</div>
+  <div style="font-size:.95rem;color:var(--zinc-400);line-height:1.6"><span id="shield-hit-subtitle-line1">Je schild heeft je beschermd.</span><br>Gescand door <strong id="shield-hit-attacker" style="color:var(--zinc-200)">een tegenstander</strong>.</div>
   <div style="font-family:var(--f-mono);font-size:4rem;font-weight:700;color:#3b82f6;line-height:1;font-variant-numeric:tabular-nums" id="shield-grace-timer">30</div>
   <div style="font-size:.8rem;color:var(--zinc-500);letter-spacing:.5px">seconden om weg te komen</div>
   <div style="width:100%;max-width:300px;height:4px;background:var(--zinc-800);border-radius:2px;overflow:hidden;margin-top:.5rem">
@@ -1762,6 +1762,11 @@ function doEliminate(){
     const rem=Math.ceil((target.shieldGraceUntil-Date.now())/1000);
     toast(target.name+' is beschermd nog '+rem+'s','red');input.value='';return;
   }
+  // Check immuniteit na recente treffer (1 minuut om te verstoppen)
+  if(target.hitGraceUntil&&Date.now()<target.hitGraceUntil){
+    const rem=Math.ceil((target.hitGraceUntil-Date.now())/1000);
+    toast(target.name+' is nog onaantastbaar — nog '+rem+'s','red');input.value='';return;
+  }
   // Check scanner-cooldown (voorkomt dezelfde code meerdere keren invoeren)
   const lastScan=scanCooldowns.get(num);
   if(lastScan&&Date.now()-lastScan<SCAN_COOLDOWN_MS){
@@ -1786,7 +1791,10 @@ function doEliminate(){
   }
   if(hasShield&&hasPiercing){G.powerups[G.powerups.indexOf('piercing')]=null;toast('Piercing shot — schild doorboord!');addLog('Piercing shot op '+target.name);}
   G.kills++;
-  G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p){p.lives=Math.max(0,p.lives-1);if(p.lives<=0)p.alive=false;delete p.hasShield;}});
+  // Optimistische lokale update voor instant feedback — de Firebase-transactie in
+  // syncKillToFirebase is de bron van waarheid en corrigeert dit zo nodig.
+  const hitGraceUntil=Date.now()+60000;
+  G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p){p.lives=Math.max(0,p.lives-1);if(p.lives<=0){p.alive=false;}else{p.hitGraceUntil=hitGraceUntil;}delete p.hasShield;}});
   // Bug fix: kills opslaan bij de juiste speler (niet altijd players[0])
   const myPlayer=allPlayers().find(p=>p.number===G.playerNumber);
   if(myPlayer)myPlayer.kills=G.kills;
@@ -1794,14 +1802,14 @@ function doEliminate(){
   // Scan-cooldown instellen (3 minuten)
   scanCooldowns.set(num,Date.now());
   updAlive();playSound('kill');
-  // Haal bijgewerkte stats op voor Firebase sync
+  // Haal bijgewerkte stats op voor lokale toast/log (optimistisch — zie boven)
   const updatedTarget=allPlayers().find(p=>p.number===num);
   const tLives=updatedTarget?.lives??0;
   const tAlive=updatedTarget?.alive??false;
   toast(target.name+' (#'+num+') geraakt'+(tLives>0?' — nog '+tLives+' lev'+(tLives===1?'en':'ens'):' — geëlimineerd')+'!','red');
   addLog(target.name+' (#'+num+') geraakt door '+G.name+(tAlive?' ('+tLives+' levens over)':' — geëlimineerd'));
   input.value='';renderPU();
-  if(!DEMO_MODE&&db)syncKillToFirebase(target.name,num,tLives,tAlive);
+  if(!DEMO_MODE&&db)syncKillToFirebase(target.name,num,CFG.lives);
 }
 
 // ══════════════════════════════════════════════════════
@@ -2001,6 +2009,7 @@ function syncLobbyToFirebase(){
     renderLobbyView();
   });
   lobbyRef.child('players/'+G.playerNumber).set({name:G.name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:true});
+  setupShieldHitListener();
 }
 
 function joinLobbyFirebase(code,name){
@@ -2061,18 +2070,22 @@ function joinLobbyFirebase(code,name){
   });
 }
 
-function handleShieldHit(byName){
+function showHitGraceOverlay(byName,durationS,title,subtitleLine1){
   if(G.shieldGrace>0)return; // Voorkom dubbele triggers
-  G.shieldGrace=30;
+  G.shieldGrace=durationS;
   playSound('shield');
   const overlay=document.getElementById('shield-hit-overlay');
   const timerEl=document.getElementById('shield-grace-timer');
   const barEl=document.getElementById('shield-grace-bar');
+  const titleEl=document.getElementById('shield-hit-title');
+  const subtitleEl=document.getElementById('shield-hit-subtitle-line1');
   const attackerEl=document.getElementById('shield-hit-attacker');
   if(!overlay)return;
+  if(titleEl)titleEl.textContent=title;
+  if(subtitleEl)subtitleEl.textContent=subtitleLine1;
   if(attackerEl)attackerEl.textContent=byName||'een tegenstander';
-  if(timerEl)timerEl.textContent='30';
-  if(barEl){barEl.style.transition='none';barEl.style.width='100%';setTimeout(()=>{barEl.style.transition='width 30s linear';barEl.style.width='0%';},50);}
+  if(timerEl)timerEl.textContent=durationS;
+  if(barEl){barEl.style.transition='none';barEl.style.width='100%';setTimeout(()=>{barEl.style.transition='width '+durationS+'s linear';barEl.style.width='0%';},50);}
   overlay.style.display='flex';
   // Verwijder eigen schild lokaal
   const me=allPlayers().find(p=>p.number===G.playerNumber);
@@ -2084,10 +2097,21 @@ function handleShieldHit(byName){
       clearInterval(tShield);
       overlay.style.display='none';
       // Verwijder grace in Firebase zodat scanner weer kan scannen
-      if(!DEMO_MODE&&db&&lobbyRef)lobbyRef.child('players/'+G.playerNumber+'/shieldGraceUntil').remove();
+      if(!DEMO_MODE&&db&&lobbyRef){
+        lobbyRef.child('players/'+G.playerNumber+'/shieldGraceUntil').remove();
+        lobbyRef.child('players/'+G.playerNumber+'/hitGraceUntil').remove();
+      }
       toast('Grace voorbij — let op!','red');
     }
   },1000);
+}
+
+function handleShieldHit(byName){
+  showHitGraceOverlay(byName,30,'SCHILD ACTIEF','Je schild heeft je beschermd.');
+}
+
+function handleLifeLossHit(byName){
+  showHitGraceOverlay(byName,60,'GERAAKT!','Je hebt een leven verloren — verstop je.');
 }
 
 function setupShieldHitListener(){
@@ -2099,18 +2123,38 @@ function setupShieldHitListener(){
     if(Date.now()-hit.ts<15000) handleShieldHit(hit.by);
     snap.ref.remove();
   });
+  lobbyRef.child('lifeLossHits/'+G.playerNumber).on('value',snap=>{
+    const hit=snap.val();
+    if(!hit)return;
+    if(Date.now()-hit.ts<15000) handleLifeLossHit(hit.by);
+    snap.ref.remove();
+  });
 }
 
-function syncKillToFirebase(targetName,targetNum,targetLives,targetAlive){
+function syncKillToFirebase(targetName,targetNum,maxLives){
   if(!db||!lobbyRef)return;
-  // Sync leven-count zodat adminpanel en andere spelers altijd actuele status zien
-  lobbyRef.child('players/'+targetNum+'/lives').set(targetLives);
-  lobbyRef.child('players/'+targetNum+'/alive').set(targetAlive);
-  lobbyRef.child('gameState/players/'+targetNum).set({alive:targetAlive,lives:targetLives});
+  // Atomische aftrek via transaction: voorkomt dat gelijktijdige hits door
+  // meerdere spelers elkaars treffer overschrijven (race condition bij drukte).
+  lobbyRef.child('players/'+targetNum+'/lives').transaction(current=>{
+    const cur=(current==null)?maxLives:current;
+    return Math.max(0,cur-1);
+  },(error,committed,snapshot)=>{
+    if(error||!committed||!snapshot)return;
+    const newLives=snapshot.val();
+    const newAlive=newLives>0;
+    lobbyRef.child('players/'+targetNum+'/alive').set(newAlive);
+    lobbyRef.child('gameState/players/'+targetNum).set({alive:newAlive,lives:newLives});
+    if(!newAlive){
+      lobbyRef.child('kills').push({by:G.name,target:targetName,number:targetNum,ts:Date.now()});
+    }else{
+      // Immuniteit van 1 minuut zodat de geraakte speler kan verstoppen
+      const hitGraceUntil=Date.now()+60000;
+      lobbyRef.child('players/'+targetNum+'/hitGraceUntil').set(hitGraceUntil);
+      lobbyRef.child('lifeLossHits/'+targetNum).set({by:G.name,ts:Date.now()});
+    }
+  });
   // Kill-teller voor de scanner
   lobbyRef.child('players/'+G.playerNumber+'/kills').transaction(k=>(k||0)+1);
-  // Kill-log alleen bij volledige eliminatie
-  if(!targetAlive) lobbyRef.child('kills').push({by:G.name,target:targetName,number:targetNum,ts:Date.now()});
 }
 
 function syncGameStartToFirebase(){
