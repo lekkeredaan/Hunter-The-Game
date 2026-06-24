@@ -2042,31 +2042,43 @@ function joinLobbyFirebase(code,name){
       G.teams=[{name:'FFA',color:0,players:[...existingPlayers]}];
     }
 
-    // Voeg zichzelf direct toe zodat de lobby meteen klopt
-    const selfData={name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:false};
-    const alreadyIn=existingPlayers.some(p=>p.number===G.playerNumber);
-    if(!alreadyIn){
-      if(CFG.mode==='teams'){if(G.teams[G.myTeam])G.teams[G.myTeam].players.push(selfData);}
-      else{G.teams[0].players.push(selfData);}
-    }
-    renderLobbyView();renderLobbySettings();saveSession();
+    // Claim een uniek spelernummer via een Firebase-transactie: voorkomt dat twee
+    // spelers die toevallig hetzelfde random nummer kregen elkaars data overschrijven.
+    function claimNumber(attempt){
+      if(attempt>10){toast('Kon geen vrij spelernummer vinden — probeer opnieuw te joinen','red');go('s-join');return;}
+      const selfData={name,number:G.playerNumber,kills:0,alive:true,lives:CFG.lives,teamIdx:G.myTeam,isHost:false};
+      lobbyRef.child('players/'+G.playerNumber).transaction(current=>{
+        if(current===null||current===undefined)return selfData;
+        if(current.name===name)return current; // herverbinding met hetzelfde nummer
+        return; // bezet door iemand anders -> abort, nieuw nummer proberen
+      },(error,committed)=>{
+        if(error)return;
+        if(!committed){
+          G.playerNumber=String(10000+Math.floor(Math.random()*89999));
+          claimNumber(attempt+1);
+          return;
+        }
+        if(CFG.mode==='teams'){if(G.teams[G.myTeam])G.teams[G.myTeam].players.push(selfData);}
+        else{G.teams[0].players.push(selfData);}
+        renderLobbyView();renderLobbySettings();saveSession();
 
-    // Schrijf naar Firebase en stel realtime-listener in
-    lobbyRef.child('players/'+G.playerNumber).set(selfData);
-    lobbyRef.child('players/'+G.playerNumber).onDisconnect().remove();
-    lobbyRef.child('players').on('value',snap=>{
-      const players=snap.val(); if(!players)return;
-      const arr=Object.values(players);
-      if(CFG.mode==='teams'){G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));arr.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});}
-      else{G.teams=[{name:'FFA',color:0,players:arr}];}
-      renderLobbyView();renderLobbySettings();
-    });
-    lobbyRef.child('started').on('value',snap=>{if(snap.val()===true&&!G.gameStarted){G.gameStarted=true;startGame();}});
-    lobbyRef.child('gameState').on('value',snap=>{
-      const state=snap.val(); if(!state)return;
-      if(state.players){Object.entries(state.players).forEach(([num,data])=>{allPlayers().forEach(p=>{if(p.number===num){p.lives=data.lives;p.alive=data.alive;}});});updAlive();}
-    });
-    setupShieldHitListener();
+        lobbyRef.child('players/'+G.playerNumber).onDisconnect().remove();
+        lobbyRef.child('players').on('value',snap2=>{
+          const players=snap2.val(); if(!players)return;
+          const arr=Object.values(players);
+          if(CFG.mode==='teams'){G.teams=CFG.teamNames.slice(0,CFG.numTeams).map((nm,i)=>({name:nm,color:i%4,players:[]}));arr.forEach(p=>{const ti=p.teamIdx||0;if(G.teams[ti])G.teams[ti].players.push(p);});}
+          else{G.teams=[{name:'FFA',color:0,players:arr}];}
+          renderLobbyView();renderLobbySettings();
+        });
+        lobbyRef.child('started').on('value',snap2=>{if(snap2.val()===true&&!G.gameStarted){G.gameStarted=true;startGame();}});
+        lobbyRef.child('gameState').on('value',snap2=>{
+          const state=snap2.val(); if(!state)return;
+          if(state.players){Object.entries(state.players).forEach(([num,d])=>{allPlayers().forEach(p=>{if(p.number===num){p.lives=d.lives;p.alive=d.alive;}});});updAlive();}
+        });
+        setupShieldHitListener();
+      });
+    }
+    claimNumber(0);
   });
 }
 
