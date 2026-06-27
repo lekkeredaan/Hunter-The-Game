@@ -11,36 +11,40 @@
 <meta name="theme-color" content="#09090b"/>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2309090b'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%23f43f5e' stroke-width='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='9' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='16' y1='23' x2='16' y2='30' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='2' y1='16' x2='9' y2='16' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round'/%3E%3Cline x1='23' y1='16' x2='30' y2='16' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 
 :root{
-  --zinc-950:#09090b;
-  --zinc-900:#18181b;
-  --zinc-800:#27272a;
-  --zinc-700:#3f3f46;
-  --zinc-600:#52525b;
-  --zinc-500:#71717a;
-  --zinc-400:#a1a1aa;
-  --zinc-300:#d4d4d8;
-  --zinc-200:#e4e4e7;
-  --zinc-100:#f4f4f5;
-  --zinc-50:#fafafa;
-  --rose:#f43f5e;
-  --rose-dark:#e11d48;
-  --rose-muted:rgba(244,63,94,.12);
-  --emerald:#10b981;
-  --emerald-muted:rgba(16,185,129,.12);
-  --amber:#f59e0b;
-  --amber-muted:rgba(245,158,11,.12);
-  --blue:#3b82f6;
-  --blue-muted:rgba(59,130,246,.12);
-  --f-display:'Outfit',sans-serif;
+  --zinc-950:#0d090b;
+  --zinc-900:rgba(255,255,255,.02);
+  --zinc-800:rgba(255,255,255,.07);
+  --zinc-700:rgba(255,255,255,.10);
+  --zinc-600:rgba(255,255,255,.4);
+  --zinc-500:rgba(255,255,255,.55);
+  --zinc-400:rgba(255,255,255,.55);
+  --zinc-300:rgba(255,255,255,.78);
+  --zinc-200:rgba(255,255,255,.92);
+  --zinc-100:#fff;
+  --zinc-50:#fff;
+  --rose:#ff2d6f;
+  --rose-dark:#ff5a4d;
+  --rose-muted:rgba(255,45,111,.12);
+  --grad-primary:linear-gradient(100deg,#ff2d6f,#ff5a4d);
+  --emerald:#2bd99a;
+  --emerald-muted:rgba(43,217,154,.12);
+  --amber:#ffa022;
+  --amber-light:#ffd083;
+  --amber-muted:rgba(255,160,34,.12);
+  --blue:#9ab4ff;
+  --blue-muted:rgba(60,100,220,.12);
+  --cyan-glitch:#00e5ff;
+  --f-display:'Inter',system-ui,sans-serif;
   --f-mono:'JetBrains Mono',monospace;
 }
 
@@ -55,6 +59,25 @@ body{
   -webkit-font-smoothing:antialiased;
 }
 
+@keyframes hunterGlitch{0%,92%,100%{transform:translate(0,0)}93%{transform:translate(-3px,1px)}94%{transform:translate(3px,-1px)}95%{transform:translate(-2px,0)}96%{transform:translate(2px,1px)}97%{transform:translate(-1px,-1px)}98%{transform:translate(1px,0)}}
+@keyframes hunterSplit{0%,92%,100%{opacity:0}93%,97%{opacity:.85}}
+@keyframes scanSweep{0%{transform:translateY(-20%);opacity:0}8%{opacity:.9}50%{opacity:.5}92%{opacity:0}100%{transform:translateY(420%);opacity:0}}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(43,217,154,.55)}70%{box-shadow:0 0 0 7px rgba(43,217,154,0)}100%{box-shadow:0 0 0 0 rgba(43,217,154,0)}}
+@keyframes radarSweep{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes zoneShrink{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(.72);opacity:.95}}
+@keyframes zonePing{0%{transform:scale(.7);opacity:.7}100%{transform:scale(1.15);opacity:0}}
+@keyframes glowPulse{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes zoneRingPulse{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 30px rgba(255,45,111,.5),inset 0 0 24px rgba(255,45,111,.18)}50%{transform:translate(-50%,-50%) scale(1.035);box-shadow:0 0 46px rgba(255,45,111,.72),inset 0 0 30px rgba(255,45,111,.28)}}
+@keyframes zoneRingPing{0%{transform:translate(-50%,-50%) scale(.96);opacity:.55}100%{transform:translate(-50%,-50%) scale(1.28);opacity:0}}
+@keyframes puSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes puFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes meBlink{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes zoneRingGlow{0%,100%{filter:drop-shadow(0 0 6px rgba(255,45,111,.5))}50%{filter:drop-shadow(0 0 14px rgba(255,45,111,.85))}}
+.zone-ring-pulse{animation:zoneRingGlow 2.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+
 /* ── GRAIN OVERLAY ── */
 body::after{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:9990;
@@ -63,23 +86,18 @@ body::after{
   background-size:200px 200px;
 }
 
-/* ── HOME AMBIENT GLOW ── */
-#s-home{
-  background:
-    radial-gradient(ellipse 90% 45% at 15% 12%, rgba(244,63,94,.09) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 30% at 85% 80%, rgba(244,63,94,.05) 0%, transparent 50%),
-    var(--zinc-950);
-}
-
 /* ── SCREENS ── */
-.screen{display:none;min-height:100dvh;padding:1.5rem 1.25rem 2rem;max-width:480px;margin:0 auto;flex-direction:column;gap:1rem}
+.screen{display:none;min-height:100dvh;padding:1.5rem 1.25rem 2rem;max-width:600px;margin:0 auto;flex-direction:column;gap:1rem}
 .screen.active{display:flex}
 
 /* ── TYPOGRAPHY ── */
-.display{font-size:3.5rem;font-weight:900;letter-spacing:-2px;line-height:.95;color:var(--zinc-50)}
-.display .accent{color:var(--rose);text-shadow:0 0 48px rgba(244,63,94,.45)}
-.title{font-size:1.5rem;font-weight:700;letter-spacing:-0.5px;color:var(--zinc-50)}
-.subtitle{font-size:.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--zinc-500)}
+.display{font-size:clamp(64px,16vw,108px);font-weight:900;letter-spacing:-0.02em;line-height:.92;color:var(--zinc-50)}
+.display .accent{color:var(--rose);text-shadow:0 0 38px rgba(255,45,111,.55)}
+.title{font-size:38px;font-weight:900;letter-spacing:-0.01em;color:var(--zinc-50)}
+.title-wrap{position:relative}
+.title-wrap::before{content:'';position:absolute;left:-40px;top:-50px;width:240px;height:150px;background:radial-gradient(circle,rgba(255,45,111,.26),rgba(255,45,111,0) 70%);filter:blur(6px);pointer-events:none;animation:glowPulse 5s ease-in-out infinite;z-index:0}
+.title-wrap .title{position:relative;z-index:1}
+.subtitle{font-size:13px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.4)}
 .body-sm{font-size:.85rem;color:var(--zinc-400);line-height:1.65}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 
@@ -87,86 +105,92 @@ body::after{
 .divider{height:1px;background:var(--zinc-800);border:none;margin:.25rem 0}
 
 /* ── SECTION LABEL ── */
-.section-label{font-size:.65rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--zinc-600);padding:.75rem 0 .4rem}
+.section-label{font-size:12px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.35);padding:.75rem 0 .4rem}
 
 /* ── BUTTONS ── */
 .btn{
-  width:100%;padding:14px 20px;border:none;border-radius:12px;
-  font-family:var(--f-display);font-size:.95rem;font-weight:600;
-  cursor:pointer;transition:transform .14s,opacity .14s,background-color .18s,border-color .18s,color .18s,box-shadow .2s;
+  width:100%;padding:18px 20px;border:none;border-radius:14px;
+  font-family:var(--f-display);font-size:.95rem;font-weight:700;
+  cursor:pointer;transition:transform .14s,opacity .14s,background-color .18s,border-color .18s,color .18s,box-shadow .2s,filter .18s;
   display:flex;align-items:center;justify-content:center;gap:.5rem;
 }
 .btn:active{transform:scale(0.97)}
-.btn-primary{background:var(--rose);color:#fff}
-.btn-primary:hover{background:var(--rose-dark);box-shadow:0 4px 22px rgba(244,63,94,.38)}
-.btn-ghost{background:transparent;color:var(--zinc-300);border:1px solid var(--zinc-800)}
-.btn-ghost:hover{background:var(--zinc-900);border-color:var(--zinc-700)}
-.btn-danger{background:rgba(244,63,94,.15);color:var(--rose);border:1px solid rgba(244,63,94,.25)}
-.btn-danger:hover{background:rgba(244,63,94,.22)}
-.btn-success{background:var(--emerald-muted);color:var(--emerald);border:1px solid rgba(16,185,129,.25)}
-.btn-blue{background:rgba(255,255,255,.06);color:var(--zinc-300);border:1px solid rgba(255,255,255,.13)}
-.btn-blue:hover{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.22)}
+.btn-primary{background:var(--grad-primary);color:#fff;font-weight:800;box-shadow:0 8px 26px rgba(255,45,111,.32)}
+.btn-primary:hover{filter:brightness(1.06)}
+.btn-ghost{background:rgba(255,255,255,.05);color:#fff;border:1px solid rgba(255,255,255,.10)}
+.btn-ghost:hover{background:rgba(255,255,255,.08)}
+.btn-danger{background:rgba(255,45,111,.07);color:var(--rose);border:1px solid rgba(255,45,111,.22)}
+.btn-danger:hover{background:rgba(255,45,111,.12)}
+.btn-success{background:var(--emerald-muted);color:var(--emerald);border:1px solid rgba(43,217,154,.25)}
+.btn-blue{background:rgba(255,255,255,.05);color:#fff;border:1px solid rgba(255,255,255,.10)}
+.btn-blue:hover{background:rgba(255,255,255,.08)}
 .btn-sm{padding:8px 14px;font-size:.8rem;border-radius:9px;width:auto}
 
 /* ── BACK BUTTON ── */
 .btn-back{
   display:inline-flex;align-items:center;gap:.35rem;
-  background:transparent;border:none;color:var(--zinc-500);
-  font-family:var(--f-display);font-size:.82rem;font-weight:500;
+  background:transparent;border:none;color:rgba(255,255,255,.55);
+  font-family:var(--f-display);font-size:15px;font-weight:600;
   cursor:pointer;padding:.25rem 0;transition:color .15s;width:auto;
 }
-.btn-back:hover{color:var(--zinc-200)}
+.btn-back:hover{color:#fff}
 .btn-back svg{width:16px;height:16px}
 
 /* ── INPUTS ── */
 input,select{
-  width:100%;padding:13px 14px;
-  background:var(--zinc-900);border:1px solid var(--zinc-800);
-  border-radius:10px;color:var(--zinc-100);
-  font-family:var(--f-display);font-size:.95rem;outline:none;
+  width:100%;padding:15px 16px;
+  background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.10);
+  border-radius:12px;color:var(--zinc-100);
+  font-family:var(--f-display);font-size:16px;outline:none;
   transition:border-color .15s;
 }
-input:focus,select:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(244,63,94,.12)}
+input:focus,select:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(255,45,111,.12)}
 input[type=range]{padding:6px 0;background:transparent;border:none;accent-color:var(--rose)}
 input[type=checkbox]{width:auto}
-select option{background:var(--zinc-900)}
-.input-label{font-size:.78rem;font-weight:500;color:var(--zinc-400);margin-bottom:5px;display:block}
-.input-hint{font-size:.72rem;color:var(--zinc-600);margin-top:4px}
+select option{background:#18181b}
+.input-label{font-size:15px;font-weight:700;color:#fff;margin-bottom:9px;display:block}
+.input-hint{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:4px}
 .input-group{display:flex;flex-direction:column;gap:0}
 
 /* ── CARDS / SURFACES ── */
 .surface{
-  background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:16px;padding:1.1rem 1.2rem;
-  box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 4px 20px rgba(0,0,0,.22);
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:22px 24px;
 }
-.surface-flat{border-radius:12px;background:var(--zinc-900);border:1px solid var(--zinc-800);box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
+.surface-flat{border-radius:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07)}
 
 /* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:.3rem;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:9px;font-size:14px;font-weight:700}
 .badge-alive{background:var(--emerald-muted);color:var(--emerald)}
 .badge-dead{background:var(--rose-muted);color:var(--rose)}
-.badge-host{background:var(--amber-muted);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.badge-host{background:var(--amber-muted);color:var(--amber);border:1px solid rgba(255,160,34,.2)}
 .badge-demo{background:var(--amber-muted);color:var(--amber)}
 .badge-connected{background:var(--emerald-muted);color:var(--emerald)}
 .badge-disconnected{background:var(--rose-muted);color:var(--rose)}
-.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
 .dot-green{background:var(--emerald)}
 .dot-red{background:var(--rose)}
 .dot-amber{background:var(--amber)}
 
 /* ── RANGE SLIDER ROW ── */
-.range-row{display:flex;align-items:center;gap:.75rem}
-.range-row input[type=range]{flex:1}
-.range-val{font-family:var(--f-mono);font-size:.85rem;color:var(--zinc-200);min-width:52px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.range-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px}
+.range-val{font-family:var(--f-mono);font-size:18px;color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
+
+/* ── CUSTOM SLIDER (wraps a hidden native range input for real drag/touch/keyboard support) ── */
+.cslider-wrap{position:relative;height:22px}
+.cslider-visual{position:absolute;inset:0;display:flex;align-items:center;pointer-events:none}
+.cslider-track{position:absolute;left:0;right:0;height:6px;border-radius:3px;background:#e9e6e8}
+.cslider-fill{position:absolute;left:0;height:6px;border-radius:3px;background:var(--grad-primary);width:0%}
+.cslider-thumb{position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;transform:translateX(-50%);box-shadow:0 1px 5px rgba(0,0,0,.55);left:0%}
+.cslider-wrap input[type=range]{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;touch-action:none;z-index:2}
 
 /* ── LOBBY CODE ── */
 .lobby-code-display{
-  font-family:var(--f-mono);font-size:2.5rem;font-weight:700;
+  font-family:var(--f-mono);font-size:48px;font-weight:800;
   font-variant-numeric:tabular-nums;
-  letter-spacing:10px;color:var(--zinc-50);text-align:center;
-  padding:1.25rem;background:var(--zinc-900);border-radius:12px;
-  border:1px solid rgba(244,63,94,.2);
-  box-shadow:0 0 0 1px rgba(244,63,94,.06), 0 8px 32px rgba(244,63,94,.1), 0 1px 0 rgba(255,255,255,.05) inset;
+  letter-spacing:.2em;padding-left:.2em;color:#fff;text-align:center;
+  padding:26px;background:linear-gradient(135deg,rgba(255,45,111,.08),rgba(255,255,255,.01));border-radius:14px;
+  border:1px solid rgba(255,45,111,.3);
+  box-shadow:inset 0 0 30px rgba(255,45,111,.08);
 }
 
 /* ── NUMBER CARD ── */
@@ -235,7 +259,7 @@ select option{background:var(--zinc-900)}
   cursor:pointer;transition:all .15s;border:1px solid var(--zinc-800);
   background:var(--zinc-900);
 }
-.pu-slot.filled{border-color:rgba(244,63,94,.4);background:var(--rose-muted)}
+.pu-slot.filled{border-color:rgba(255,45,111,.4);background:var(--rose-muted)}
 .pu-slot.empty{opacity:.3;cursor:default}
 .pu-slot:active{transform:scale(0.97)}
 .pu-icon-lg{font-size:1.4rem;display:flex;align-items:center;justify-content:center}
@@ -253,12 +277,12 @@ select option{background:var(--zinc-900)}
 .nav-tab.active{background:var(--zinc-800);color:var(--zinc-100);box-shadow:0 1px 0 rgba(255,255,255,.06) inset}
 
 /* ── TOGGLE ── */
-.toggle{position:relative;width:38px;height:22px;display:inline-block;cursor:pointer;flex-shrink:0}
+.toggle{position:relative;width:48px;height:27px;display:inline-block;cursor:pointer;flex-shrink:0}
 .toggle input{opacity:0;width:0;height:0}
-.toggle-track{position:absolute;inset:0;background:var(--zinc-700);border-radius:11px;transition:.2s}
-.toggle-thumb{position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.toggle input:checked~.toggle-track{background:var(--rose)}
-.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
+.toggle-track{position:absolute;inset:0;background:rgba(255,255,255,.12);border-radius:14px;transition:.2s}
+.toggle-thumb{position:absolute;width:21px;height:21px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.toggle input:checked~.toggle-track{background:var(--grad-primary)}
+.toggle input:checked~.toggle-thumb{transform:translateX(21px)}
 
 /* ── ZONE BAR ── */
 .zone-bar-wrap{display:flex;flex-direction:column;gap:4px}
@@ -269,21 +293,21 @@ select option{background:var(--zinc-900)}
 .zone-bar-fill{height:100%;background:var(--rose);border-radius:3px;transition:width 1s linear}
 
 /* ── ALERT BANNERS ── */
-.alert{padding:.65rem 1rem;border-radius:10px;font-size:.82rem;font-weight:500;display:none}
-.alert-danger{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rose)}
-.alert-info{background:var(--blue-muted);border:1px solid rgba(59,130,246,.2);color:var(--blue)}
+.alert{padding:18px 20px;border-radius:14px;font-size:16px;font-weight:700;line-height:1.45;display:none}
+.alert-danger{background:rgba(255,45,111,.1);border:1px solid rgba(255,45,111,.2);color:var(--rose)}
+.alert-info{background:var(--blue-muted);border:1px solid rgba(90,140,255,.3);color:var(--blue)}
 
 /* ── LEADERBOARD ── */
-.lb-row{display:flex;align-items:center;gap:.65rem;padding:.65rem .85rem;border-radius:10px;background:var(--zinc-900);border:1px solid var(--zinc-800);margin-bottom:.4rem;box-shadow:0 1px 0 rgba(255,255,255,.03) inset}
-.lb-rank{font-family:var(--f-mono);font-size:1.1rem;font-weight:700;color:var(--zinc-600);width:20px;text-align:center}
-.lb-rank.gold{color:#f59e0b}
+.lb-row{display:flex;align-items:center;gap:.65rem;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);margin-bottom:8px}
+.lb-rank{font-family:var(--f-mono);font-size:1.1rem;font-weight:700;color:rgba(255,255,255,.4);width:20px;text-align:center}
+.lb-rank.gold{color:#ffa022}
 .lb-rank.silver{color:#9ca3af}
 .lb-rank.bronze{color:#d97706}
-.lb-name{flex:1;font-size:.88rem;font-weight:500}
-.lb-kills{font-family:var(--f-mono);font-size:1rem;font-weight:700;color:var(--zinc-300)}
+.lb-name{flex:1;font-size:16px;font-weight:700;color:#fff}
+.lb-kills{font-family:var(--f-mono);font-size:16px;font-weight:800;color:#fff}
 
 /* ── ADMIN PLAYER ROW ── */
-.admin-row{display:flex;align-items:center;justify-content:space-between;padding:.65rem .85rem;background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:10px;gap:.5rem;margin-bottom:.4rem}
+.admin-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-radius:12px;gap:.5rem;margin-bottom:8px}
 
 /* ── TEAM CARD ── */
 .team-chip{border-radius:10px;border:1.5px solid;padding:.85rem 1rem;margin-bottom:.4rem}
@@ -311,21 +335,21 @@ select option{background:var(--zinc-900)}
 .size-btn.active{border-color:var(--rose);background:var(--rose-muted);color:var(--rose)}
 
 /* ── PU TOGGLE ROW ── */
-.pu-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--zinc-800);gap:.75rem}
-.pu-toggle-row:last-child{border-bottom:none}
+.pu-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-top:1px solid var(--zinc-800);gap:1rem}
+.pu-toggle-row:first-child{border-top:none}
 .pu-toggle-info{flex:1}
-.pu-toggle-name{font-size:.88rem;font-weight:600;color:var(--zinc-200)}
-.pu-toggle-desc{font-size:.72rem;color:var(--zinc-500);margin-top:2px;line-height:1.4}
+.pu-toggle-name{font-size:16px;font-weight:700;color:#fff}
+.pu-toggle-desc{font-size:13px;color:rgba(255,255,255,.42);margin-top:4px;line-height:1.45}
 
 /* ── SETTINGS PREVIEW ── */
 .settings-preview{
-  background:var(--zinc-900);border:1px solid var(--zinc-800);
-  border-radius:12px;padding:.9rem 1rem;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);
+  border-radius:16px;padding:24px;
 }
-.settings-preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-.sp-item{display:flex;flex-direction:column;gap:1px}
-.sp-key{font-size:.62rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--zinc-600)}
-.sp-val{font-family:var(--f-mono);font-size:.88rem;font-weight:700;color:var(--zinc-200)}
+.settings-preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 24px}
+.sp-item{display:flex;flex-direction:column;gap:5px}
+.sp-key{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.sp-val{font-family:var(--f-mono);font-size:18px;font-weight:800;color:#fff}
 
 /* ── MAP PU POPUP ── */
 .pu-map-overlay{
@@ -365,7 +389,7 @@ select option{background:var(--zinc-900)}
   border-radius:14px;color:var(--zinc-50);padding:.9rem;width:100%;
   transition:border-color .15s;
 }
-.target-input:focus{border-color:var(--rose);outline:none;box-shadow:0 0 0 3px rgba(244,63,94,.12)}
+.target-input:focus{border-color:var(--rose);outline:none;box-shadow:0 0 0 3px rgba(255,45,111,.12)}
 
 /* ── TOAST ── */
 .toast-container{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:.4rem;align-items:center;pointer-events:none}
@@ -379,8 +403,8 @@ select option{background:var(--zinc-900)}
   transform:translateY(4px);
 }
 .toast.show{opacity:1;transform:translateY(0)}
-.toast.red{background:var(--rose);color:#fff;border-color:var(--rose);box-shadow:0 4px 20px rgba(244,63,94,.4), 0 1px 0 rgba(255,255,255,.12) inset}
-.toast.green{background:var(--emerald);color:#fff;border-color:var(--emerald);box-shadow:0 4px 20px rgba(16,185,129,.35), 0 1px 0 rgba(255,255,255,.12) inset}
+.toast.red{background:var(--rose);color:#fff;border-color:var(--rose);box-shadow:0 4px 20px rgba(255,45,111,.4), 0 1px 0 rgba(255,255,255,.12) inset}
+.toast.green{background:var(--emerald);color:#fff;border-color:var(--emerald);box-shadow:0 4px 20px rgba(43,217,154,.35), 0 1px 0 rgba(255,255,255,.12) inset}
 
 /* ── HEADER ROW ── */
 .screen-header{display:flex;align-items:center;gap:.75rem;padding-bottom:.25rem}
@@ -393,44 +417,45 @@ select option{background:var(--zinc-900)}
 }
 .elim-icon{
   width:72px;height:72px;border-radius:50%;
-  background:var(--rose-muted);border:2px solid rgba(244,63,94,.3);
+  background:var(--rose-muted);border:2px solid rgba(255,45,111,.3);
   display:flex;align-items:center;justify-content:center;
 }
-.elim-title{font-size:2.2rem;font-weight:900;letter-spacing:-1px;color:var(--rose);text-shadow:0 0 40px rgba(244,63,94,.5)}
+.elim-title{font-size:2.2rem;font-weight:900;letter-spacing:-1px;color:var(--rose);text-shadow:0 0 40px rgba(255,45,111,.5)}
 .elim-kills{font-family:var(--f-mono);font-size:2.8rem;font-weight:700;color:var(--zinc-50)}
 
 /* ── HOW TO CARD ── */
-.how-to-item{display:flex;gap:.75rem;align-items:flex-start;padding:.5rem 0}
+.how-to-item{display:flex;gap:16px;align-items:flex-start;padding:14px 12px;border-radius:12px;transition:background .2s,transform .2s}
+.how-to-item:hover{background:rgba(255,45,111,.07);transform:translateX(4px)}
 .how-to-num{
-  width:22px;height:22px;border-radius:50%;
-  background:var(--rose-muted);border:1px solid rgba(244,63,94,.3);
-  color:var(--rose);font-size:.72rem;font-weight:700;
+  width:30px;height:30px;border-radius:50%;
+  background:transparent;border:1.5px solid rgba(255,45,111,.5);
+  color:var(--rose);font-size:13px;font-weight:700;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  margin-top:1px;
+  margin-top:1px;transition:background .2s;
 }
-.how-to-text{font-size:.85rem;color:var(--zinc-400);line-height:1.5}
+.how-to-item:hover .how-to-num{background:rgba(255,45,111,.18)}
+.how-to-text{font-size:16px;font-weight:600;line-height:1.4;color:rgba(255,255,255,.92)}
 
 /* ── RULES ── */
-.rule-block{padding:.9rem 0;border-bottom:1px solid var(--zinc-800)}
-.rule-block:last-child{border-bottom:none}
-.rule-title{font-size:.82rem;font-weight:700;color:var(--zinc-200);margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
-.rule-body{font-size:.8rem;color:var(--zinc-500);line-height:1.6}
+.rule-block{padding:0;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,255,255,.07)}
+.rule-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.rule-title{font-size:18px;font-weight:800;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:.4rem}
+.rule-body{font-size:15px;color:rgba(255,255,255,.55);line-height:1.6}
 .rule-body ul{padding-left:1.1rem}
 .rule-body li{margin-bottom:.2rem}
 
 /* ── PU DETAIL ROW ── */
-.pu-detail-row{display:flex;gap:.65rem;align-items:flex-start;padding:.5rem 0;border-bottom:1px solid var(--zinc-800)}
-.pu-detail-row:last-child{border-bottom:none}
-.pu-detail-icon{font-size:1.1rem;margin-top:1px;flex-shrink:0;width:24px;display:flex;align-items:center;justify-content:center;color:var(--rose)}
-.pu-detail-icon svg{width:18px;height:18px}
-.pu-detail-name{font-size:.85rem;font-weight:600;color:var(--zinc-200)}
-.pu-detail-desc{font-size:.75rem;color:var(--zinc-500);margin-top:1px;line-height:1.45}
+.pu-detail-row{display:flex;gap:16px;align-items:center;padding:19px 0;border-top:1px solid var(--zinc-800)}
+.pu-detail-row:first-child{border-top:none}
+.pu-detail-icon-lucide{color:var(--rose);width:22px;height:22px;flex:none}
+.pu-detail-name{font-size:16px;font-weight:700;color:#fff}
+.pu-detail-desc{font-size:13px;color:rgba(255,255,255,.42);margin-top:4px;line-height:1.45}
 
 /* ── PLAYER ITEM ── */
-.player-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem .85rem;border-bottom:1px solid var(--zinc-800)}
+.player-row{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--zinc-800)}
 .player-row:last-child{border-bottom:none}
-.player-row-name{font-size:.88rem;font-weight:500}
-.player-row-num{font-family:var(--f-mono);font-size:.9rem;font-weight:700;color:var(--zinc-400)}
+.player-row-name{font-size:16px;font-weight:700;color:#fff}
+.player-row-num{font-family:var(--f-mono);font-size:16px;font-weight:700;color:rgba(255,255,255,.55)}
 
 /* ── FB STATUS ── */
 .fb-status-bar{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:8px;box-shadow:0 1px 0 rgba(255,255,255,.04) inset}
@@ -458,7 +483,7 @@ select option{background:var(--zinc-900)}
 .screen.active>*:nth-child(5){animation-delay:.20s}
 .screen.active>*:nth-child(6){animation-delay:.23s}
 .screen.active>*:nth-child(7){animation-delay:.25s}
-.dot-pulse{animation:pulse-dot 2s ease-in-out infinite}
+.dot-pulse{animation:livePulse 2s ease-out infinite}
 </style>
 </head>
 <body>
@@ -493,42 +518,57 @@ select option{background:var(--zinc-900)}
 
 <!-- ══════════════════════ HOME ══════════════════════ -->
 <div class="screen active" id="s-home">
-  <div style="padding-top:1rem">
-    <div class="subtitle" style="margin-bottom:.5rem">Urban elimination</div>
-    <div class="display">HUNT<span class="accent">ER</span></div>
+  <div style="position:relative;border-radius:18px;overflow:hidden;padding:48px 28px 40px;margin-bottom:0;isolation:isolate">
+    <canvas id="hunter-header-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0"></canvas>
+    <div style="position:absolute;inset:0;z-index:1;background:radial-gradient(120% 90% at 70% 10%, rgba(13,9,11,0) 30%, rgba(13,9,11,.55) 100%);pointer-events:none"></div>
+    <div style="position:absolute;left:0;right:0;top:60px;height:46px;z-index:3;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.10) 45%,rgba(255,45,111,.18) 55%,rgba(255,255,255,0) 100%);animation:scanSweep 6.5s ease-in-out infinite;mix-blend-mode:screen" id="hunter-scanline"></div>
+    <div style="position:relative;z-index:2">
+      <div class="subtitle" style="margin-bottom:14px">Urban elimination</div>
+      <div style="position:relative;display:inline-block;animation:hunterGlitch 5.5s steps(1) infinite" id="hunter-glitch-wrap">
+        <h1 aria-hidden="true" style="margin:0;position:absolute;inset:0;font-size:clamp(64px,16vw,108px);font-weight:900;letter-spacing:-0.02em;line-height:.92;color:var(--cyan-glitch);transform:translateX(-3px);animation:hunterSplit 5.5s steps(1) infinite;mix-blend-mode:screen;pointer-events:none">HUNTER</h1>
+        <h1 aria-hidden="true" style="margin:0;position:absolute;inset:0;font-size:clamp(64px,16vw,108px);font-weight:900;letter-spacing:-0.02em;line-height:.92;color:var(--rose);transform:translateX(3px);animation:hunterSplit 5.5s steps(1) infinite reverse;mix-blend-mode:screen;pointer-events:none">HUNTER</h1>
+        <div class="display" style="position:relative">HUNT<span class="accent">ER</span></div>
+      </div>
+    </div>
   </div>
 
-  <div class="fb-status-bar" id="fb-status-home">
+  <div style="display:flex;align-items:center;gap:11px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);border-radius:12px;padding:15px 18px" id="fb-status-home">
     <span class="dot dot-amber dot-pulse" id="fb-dot-home"></span>
-    <span class="fb-status-text" id="fb-text-home">Demo modus — configureer Firebase voor multiplayer</span>
+    <span style="font-size:14px;color:rgba(255,255,255,.55)" id="fb-text-home">Demo modus — configureer Firebase voor multiplayer</span>
   </div>
 
-  <div class="surface" style="padding:.85rem 1rem">
-    <div class="subtitle" style="margin-bottom:.65rem">Hoe werkt het</div>
-    <div class="how-to-item"><div class="how-to-num">1</div><div class="how-to-text">Maak een lobby aan en deel de code met vrienden</div></div>
-    <div class="how-to-item"><div class="how-to-num">2</div><div class="how-to-text">Iedereen krijgt een uniek 5-cijferig nummer — print dit op je rug</div></div>
-    <div class="how-to-item"><div class="how-to-num">3</div><div class="how-to-text">Zie je iemands nummer? Typ het in om hem te elimineren</div></div>
-    <div class="how-to-item"><div class="how-to-num">4</div><div class="how-to-text">Verdien power-ups en overleef de krimpende zone</div></div>
+  <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px">
+    <button onclick="go('s-create')" style="text-align:left;cursor:pointer;border:1px solid rgba(255,45,111,.25);background:linear-gradient(135deg,rgba(255,45,111,.10),rgba(255,255,255,.02));border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:6px" class="home-cta-card">
+      <div class="subtitle" style="margin:0">Start een spel</div>
+      <div style="font-size:22px;font-weight:800;color:#fff;line-height:1.2">Lobby aanmaken</div>
+      <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.45)">toegangscode + instellingen</div>
+    </button>
+    <div style="border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
+      <div class="subtitle" style="align-self:flex-start;margin:0">Zone</div>
+      <div style="position:relative;width:78px;height:78px">
+        <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,45,111,.25)"></div>
+        <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,45,111,.4);animation:zonePing 2.4s ease-out infinite"></div>
+        <div style="position:absolute;inset:18px;border-radius:50%;border:1.5px solid rgba(255,45,111,.7);background:rgba(255,45,111,.06);animation:zoneShrink 4s ease-in-out infinite"></div>
+        <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,45,111,.45) 0deg,rgba(255,45,111,0) 70deg,rgba(255,45,111,0) 360deg);animation:radarSweep 3s linear infinite"></div>
+        <div style="position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:var(--rose);transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(255,45,111,.9)"></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.55)">krimpt</div>
+    </div>
+  </div>
+
+  <div class="surface">
+    <div class="subtitle" style="margin-bottom:22px">Hoe werkt het</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="how-to-item"><div class="how-to-num">1</div><div class="how-to-text">Maak een lobby aan en deel de code met vrienden</div></div>
+      <div class="how-to-item"><div class="how-to-num">2</div><div class="how-to-text">Iedereen krijgt een uniek 5-cijferig nummer — print dit op je rug</div></div>
+      <div class="how-to-item"><div class="how-to-num">3</div><div class="how-to-text">Zie je iemands nummer? Typ het in om hem te elimineren</div></div>
+      <div class="how-to-item"><div class="how-to-num">4</div><div class="how-to-text">Verdien power-ups en overleef de krimpende zone</div></div>
+    </div>
   </div>
 
   <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem">
     <button class="btn btn-primary" onclick="go('s-join')">Lobby joinen</button>
-    <button class="btn btn-ghost" style="background:var(--zinc-800);border-color:var(--zinc-700)" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
-  </div>
-
-  <div class="surface" style="padding:.85rem 1rem;display:flex;flex-direction:column;gap:.6rem;margin-top:.25rem">
-    <div class="subtitle" style="margin-bottom:.1rem">Spel starten met een code</div>
-    <div class="input-group">
-      <label class="input-label">Toegangscode</label>
-      <input id="access-code-input" placeholder="bijv. AB12-CD34" maxlength="20"
-        style="text-transform:uppercase;letter-spacing:2px;font-family:var(--f-mono);font-weight:700"/>
-    </div>
-    <div id="access-code-error" class="alert alert-danger" style="display:none"></div>
-    <button class="btn btn-blue" onclick="redeemAccessCode()" id="redeem-btn">
-      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M12 4v16M4 12h16"/></svg>
-      Maak mijn spel
-    </button>
-    <div class="body-sm" style="color:var(--zinc-500)">Je code is na het invoeren 72 uur geldig. Je wordt automatisch host/admin van je eigen lobby.</div>
+    <button class="btn btn-ghost" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
   </div>
 
   <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
@@ -544,7 +584,7 @@ select option{background:var(--zinc-900)}
       Home
     </button>
   </div>
-  <div class="title">Spelregels</div>
+  <div class="title-wrap"><div class="title">Spelregels</div></div>
 
   <div class="surface">
     <div class="rule-block">
@@ -570,8 +610,8 @@ select option{background:var(--zinc-900)}
   </div>
 
   <div>
-    <div class="subtitle" style="padding:.6rem 0 .4rem">Power-ups</div>
-    <div class="surface">
+    <div class="section-label">Power-ups</div>
+    <div class="surface" style="padding:6px 22px">
       <div id="rules-pu-list"></div>
     </div>
   </div>
@@ -587,87 +627,93 @@ select option{background:var(--zinc-900)}
       Home
     </button>
   </div>
-  <div class="title">Lobby aanmaken</div>
+  <div class="title-wrap"><div class="title">Lobby aanmaken</div></div>
 
   <!-- BASICS -->
-  <div class="surface" style="display:flex;flex-direction:column;gap:.85rem">
-    <div class="input-group">
+  <div class="surface" style="display:flex;flex-direction:column;gap:0">
+    <label class="input-label">Toegangscode</label>
+    <input id="access-code-input" placeholder="BIJV. AB12-CD34" maxlength="20"
+      style="text-transform:uppercase;letter-spacing:.18em;font-family:var(--f-mono);font-weight:700;border-color:rgba(255,45,111,.22);background:rgba(255,45,111,.05);margin-bottom:8px"/>
+    <div id="access-code-error" class="alert alert-danger" style="display:none;margin-bottom:8px"></div>
+    <div class="input-hint" style="margin-bottom:22px">Je code is na het invoeren 72 uur geldig. Je wordt automatisch host/admin van je eigen lobby.</div>
+    <div class="divider" style="margin-bottom:22px"></div>
+    <div class="input-group" style="margin-bottom:22px">
       <label class="input-label">Jouw naam</label>
       <input id="cn" placeholder="bijv. Daan" maxlength="20"/>
     </div>
-    <div class="input-group">
-      <label class="input-label">Speelgebied <span style="font-weight:400;color:var(--zinc-600)">(wordt getoond in de app)</span></label>
+    <div class="input-group" style="margin-bottom:22px">
+      <label class="input-label">Speelgebied <span style="font-weight:500;color:rgba(255,255,255,.4)">(wordt getoond in de app)</span></label>
       <input id="ca" placeholder="bijv. Centrum Helmond"/>
     </div>
     <div class="input-group">
-      <label class="input-label">Lobbycode <span style="font-weight:400;color:var(--zinc-600)">(optioneel — laat leeg voor automatisch)</span></label>
+      <label class="input-label">Lobbycode <span style="font-weight:500;color:rgba(255,255,255,.4)">(optioneel — laat leeg voor automatisch)</span></label>
       <input id="custom-lobby-code" placeholder="bijv. DAAN1" maxlength="8"
-        style="text-transform:uppercase;letter-spacing:4px;font-family:var(--f-mono);font-weight:700"/>
+        style="text-transform:uppercase;letter-spacing:.22em;font-family:var(--f-mono);font-weight:700"/>
     </div>
   </div>
 
   <!-- TIMING -->
   <div>
-    <div class="subtitle" style="padding:.6rem 0 .4rem">Tijdinstellingen</div>
-    <div class="surface" style="display:flex;flex-direction:column;gap:.9rem">
-      <div>
-        <div class="input-label">Spelduur</div>
-        <div class="range-row"><input id="cd" type="range" min="15" max="180" value="60" step="5" oninput="updDur()"/><span class="range-val" id="cd-lbl">60 min</span></div>
-        <div class="input-hint">Na deze tijd stopt het spel automatisch.</div>
+    <div class="section-label">Tijdinstellingen</div>
+    <div class="surface" style="display:flex;flex-direction:column;gap:0">
+      <div style="margin-bottom:24px">
+        <div class="range-row"><span class="input-label" style="margin:0">Speelduur</span><span class="range-val" id="cd-lbl">60 min</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="cd-fill"></div><div class="cslider-thumb" id="cd-thumb"></div></div><input id="cd" type="range" min="15" max="180" value="60" step="5" oninput="updDur()"/></div>
+        <div class="input-hint" style="margin-top:11px">Na deze tijd stopt het spel automatisch.</div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div class="range-row"><span class="input-label" style="margin:0">Grace period</span><span class="range-val" id="s-grace-lbl">5 min</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-grace-fill"></div><div class="cslider-thumb" id="s-grace-thumb"></div></div><input id="s-grace" type="range" min="1" max="10" value="5" step="1" oninput="updGrace()"/></div>
+        <div class="input-hint" style="margin-top:11px">Aan het begin kan niemand geëlimineerd worden — tijd om je te verstoppen.</div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div class="range-row"><span class="input-label" style="margin:0">Straal speelveld</span><span class="range-val" id="s-radius-lbl">400 m</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-radius-fill"></div><div class="cslider-thumb" id="s-radius-thumb"></div></div><input id="s-radius" type="range" min="100" max="2000" value="400" step="50" oninput="updRadius()"/></div>
+        <div class="input-hint" style="margin-top:11px">Jouw GPS-locatie wordt het middelpunt van de rode cirkel.</div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div class="range-row"><span class="input-label" style="margin:0">Levens per speler</span><span class="range-val" id="s-lives-lbl">1</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-lives-fill"></div><div class="cslider-thumb" id="s-lives-thumb"></div></div><input id="s-lives" type="range" min="1" max="5" value="1" step="1" oninput="updLives()"/></div>
+        <div class="input-hint" style="margin-top:11px">Met 1 leven ben je na 1 scan direct af.</div>
       </div>
       <div>
-        <div class="input-label">Grace period</div>
-        <div class="range-row"><input id="s-grace" type="range" min="1" max="10" value="5" step="1" oninput="updGrace()"/><span class="range-val" id="s-grace-lbl">5 min</span></div>
-        <div class="input-hint">Aan het begin kan niemand geëlimineerd worden — tijd om je te verstoppen.</div>
-      </div>
-      <div>
-        <div class="input-label">Straal speelveld</div>
-        <div class="range-row"><input id="s-radius" type="range" min="100" max="2000" value="400" step="50" oninput="updRadius()"/><span class="range-val" id="s-radius-lbl">400 m</span></div>
-        <div class="input-hint">Jouw GPS-locatie wordt het middelpunt van de rode cirkel.</div>
-      </div>
-      <div>
-        <div class="input-label">Levens per speler</div>
-        <div class="range-row"><input id="s-lives" type="range" min="1" max="5" value="1" step="1" oninput="updLives()"/><span class="range-val" id="s-lives-lbl">1</span></div>
-        <div class="input-hint">Met 1 leven ben je na 1 scan direct af.</div>
-      </div>
-      <div>
-        <div class="input-label">Max. tijd buiten zone</div>
-        <div class="range-row"><input id="s-outside" type="range" min="30" max="300" value="120" step="30" oninput="updOutside()"/><span class="range-val" id="s-outside-lbl">2:00</span></div>
-        <div class="input-hint">Te lang buiten de rode cirkel = leven verliezen.</div>
+        <div class="range-row"><span class="input-label" style="margin:0">Max. tijd buiten zone</span><span class="range-val" id="s-outside-lbl">2:00</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-outside-fill"></div><div class="cslider-thumb" id="s-outside-thumb"></div></div><input id="s-outside" type="range" min="30" max="300" value="120" step="30" oninput="updOutside()"/></div>
+        <div class="input-hint" style="margin-top:11px">Te lang buiten de rode cirkel = leven verliezen.</div>
       </div>
     </div>
   </div>
 
   <!-- ADVANCED -->
   <div>
-    <div class="subtitle" style="padding:.6rem 0 .4rem">Geavanceerde instellingen</div>
-    <div class="surface" style="display:flex;flex-direction:column;gap:.9rem">
-      <div>
-        <div class="input-label">Pulse interval</div>
-        <div class="range-row"><input id="s-pulse" type="range" min="1" max="10" value="10" step="1" oninput="updSettings()"/><span class="range-val" id="s-pulse-lbl">10 min</span></div>
-        <div class="input-hint">Elke X min zijn alle spelers 10s zichtbaar op de kaart.</div>
+    <div class="section-label">Geavanceerde instellingen</div>
+    <div class="surface" style="display:flex;flex-direction:column;gap:0">
+      <div style="margin-bottom:24px">
+        <div class="range-row"><span class="input-label" style="margin:0">Pulse interval</span><span class="range-val" id="s-pulse-lbl">10 min</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-pulse-fill"></div><div class="cslider-thumb" id="s-pulse-thumb"></div></div><input id="s-pulse" type="range" min="1" max="10" value="10" step="1" oninput="updSettings()"/></div>
+        <div class="input-hint" style="margin-top:11px">Elke X min zijn alle spelers 10s zichtbaar op de kaart.</div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div class="range-row"><span class="input-label" style="margin:0">Zone rotatie</span><span class="range-val" id="s-rot-lbl">15 min</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-rot-fill"></div><div class="cslider-thumb" id="s-rot-thumb"></div></div><input id="s-rot" type="range" min="2" max="15" value="15" step="1" oninput="updSettings()"/></div>
+        <div class="input-hint" style="margin-top:11px">Elke X min verplaatst de power-up zone naar een nieuwe plek.</div>
+      </div>
+      <div style="margin-bottom:24px">
+        <div class="range-row"><span class="input-label" style="margin:0">Tijd in zone voor power-up</span><span class="range-val" id="s-zone-lbl">5 min</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-zone-fill"></div><div class="cslider-thumb" id="s-zone-thumb"></div></div><input id="s-zone" type="range" min="1" max="5" value="5" step="1" oninput="updSettings()"/></div>
+        <div class="input-hint" style="margin-top:11px">Hoe lang moet je in de zone staan?</div>
       </div>
       <div>
-        <div class="input-label">Zone rotatie</div>
-        <div class="range-row"><input id="s-rot" type="range" min="2" max="15" value="15" step="1" oninput="updSettings()"/><span class="range-val" id="s-rot-lbl">15 min</span></div>
-        <div class="input-hint">Elke X min verplaatst de power-up zone naar een nieuwe plek.</div>
-      </div>
-      <div>
-        <div class="input-label">Tijd in zone voor power-up</div>
-        <div class="range-row"><input id="s-zone" type="range" min="1" max="5" value="5" step="1" oninput="updSettings()"/><span class="range-val" id="s-zone-lbl">5 min</span></div>
-        <div class="input-hint">Hoe lang moet je in de zone staan?</div>
-      </div>
-      <div>
-        <div class="input-label">Zone krimpt tot</div>
-        <div class="range-row"><input id="s-shrink" type="range" min="10" max="80" value="25" step="5" oninput="updSettings()"/><span class="range-val" id="s-shrink-lbl">25%</span></div>
-        <div class="input-hint">Hoe klein wordt het speelveld op het einde?</div>
+        <div class="range-row"><span class="input-label" style="margin:0">Zone krimpt tot</span><span class="range-val" id="s-shrink-lbl">25%</span></div>
+        <div class="cslider-wrap"><div class="cslider-visual"><div class="cslider-track"></div><div class="cslider-fill" id="s-shrink-fill"></div><div class="cslider-thumb" id="s-shrink-thumb"></div></div><input id="s-shrink" type="range" min="10" max="80" value="25" step="5" oninput="updSettings()"/></div>
+        <div class="input-hint" style="margin-top:11px">Hoe klein wordt het speelveld op het einde?</div>
       </div>
     </div>
   </div>
 
   <!-- MODE -->
   <div>
-    <div class="subtitle" style="padding:.6rem 0 .4rem">Spelmodus</div>
+    <div class="section-label">Spelmodus</div>
     <div class="surface">
       <div class="mode-row" style="margin-bottom:.75rem">
         <button class="mode-btn active" id="mode-ffa" onclick="setMode('ffa')">Free for all</button>
@@ -707,13 +753,13 @@ select option{background:var(--zinc-900)}
 
   <!-- POWERUPS -->
   <div>
-    <div class="subtitle" style="padding:.6rem 0 .4rem">Power-ups aan/uit</div>
-    <div class="surface"><div id="pu-toggles"></div></div>
+    <div class="section-label">Power-ups aan/uit</div>
+    <div class="surface" style="padding:6px 22px"><div id="pu-toggles"></div></div>
   </div>
 
   <!-- PREVIEW -->
   <div class="settings-preview">
-    <div class="subtitle" style="margin-bottom:.6rem">Samenvatting</div>
+    <div class="section-label" style="padding:0;margin-bottom:20px">Samenvatting</div>
     <div class="settings-preview-grid" id="settings-preview"></div>
   </div>
 
@@ -753,7 +799,7 @@ select option{background:var(--zinc-900)}
     </button>
     <span class="badge badge-host screen-header-right" id="lobby-host-badge" style="display:none">HOST</span>
   </div>
-  <div class="title">Lobby</div>
+  <div class="title-wrap"><div class="title">Lobby</div></div>
 
   <div class="surface" style="text-align:center">
     <div class="subtitle" style="margin-bottom:.5rem">Lobby code — deel met vrienden</div>
@@ -784,7 +830,7 @@ select option{background:var(--zinc-900)}
       Lobby
     </button>
   </div>
-  <div class="title">Jouw nummer</div>
+  <div class="title-wrap"><div class="title">Jouw nummer</div></div>
 
   <div class="surface" style="align-items:center;display:flex;flex-direction:column;gap:.5rem;padding:1.5rem">
     <div class="number-card" id="number-card-inner">
@@ -814,7 +860,7 @@ select option{background:var(--zinc-900)}
         Home
       </button>
       <div style="display:flex;gap:.35rem;align-items:center;margin-top:4px;flex-wrap:wrap">
-        <span class="badge badge-alive" id="g-status">Alive</span>
+        <span class="badge badge-alive" id="g-status"><span class="dot dot-green dot-pulse" style="margin-right:2px"></span>Alive</span>
         <span id="g-team-badge" style="display:none"></span>
         <span id="g-hearts" style="font-size:.82rem"></span>
       </div>
@@ -913,7 +959,7 @@ select option{background:var(--zinc-900)}
       Home
     </button>
   </div>
-  <div class="title">Admin toegang</div>
+  <div class="title-wrap"><div class="title">Admin toegang</div></div>
   <div class="body-sm">Log in met de naam van de host en de lobby code om het admin paneel te openen.</div>
 
   <div class="surface" style="display:flex;flex-direction:column;gap:.75rem">
@@ -944,7 +990,7 @@ select option{background:var(--zinc-900)}
     </button>
     <span class="badge badge-host screen-header-right">HOST</span>
   </div>
-  <div class="title">Admin</div>
+  <div class="title-wrap"><div class="title">Admin</div></div>
 
   <div class="surface">
     <div class="subtitle" style="margin-bottom:.65rem">Spelers</div>
@@ -1046,10 +1092,10 @@ let CENTER = {lat:51.4816, lng:5.6542};
 let MAX_RADIUS = 400;
 
 const TEAM_COLORS = [
-  {name:'Rood',  border:'#f43f5e', fill:'rgba(244,63,94,0.1)',   dot:'#f43f5e', badge:'background:rgba(244,63,94,0.12);color:#f43f5e'},
+  {name:'Rood',  border:'#ff2d6f', fill:'rgba(255,45,111,0.1)',   dot:'#ff2d6f', badge:'background:rgba(255,45,111,0.12);color:#ff2d6f'},
   {name:'Blauw', border:'#3b82f6', fill:'rgba(59,130,246,0.1)',  dot:'#3b82f6', badge:'background:rgba(59,130,246,0.12);color:#3b82f6'},
-  {name:'Groen', border:'#10b981', fill:'rgba(16,185,129,0.1)',  dot:'#10b981', badge:'background:rgba(16,185,129,0.12);color:#10b981'},
-  {name:'Amber', border:'#f59e0b', fill:'rgba(245,158,11,0.1)',  dot:'#f59e0b', badge:'background:rgba(245,158,11,0.12);color:#f59e0b'},
+  {name:'Groen', border:'#2bd99a', fill:'rgba(43,217,154,0.1)',  dot:'#2bd99a', badge:'background:rgba(43,217,154,0.12);color:#2bd99a'},
+  {name:'Amber', border:'#ffa022', fill:'rgba(255,160,34,0.1)',  dot:'#ffa022', badge:'background:rgba(255,160,34,0.12);color:#ffa022'},
 ];
 
 const ALL_POWERUPS = {
@@ -1060,6 +1106,8 @@ const ALL_POWERUPS = {
   decoy:    {icon:'D', name:'Lokaas',        desc:'Stuur een nep-locatie naar alle spelers.'},
   revive:   {icon:'V', name:'Revive',        desc:'Haal een geëlimineerde teamgenoot terug. (Alleen teams)', teamsOnly:true},
 };
+
+const LUCIDE_PU_ICONS = {shield:'shield-check',piercing:'code',radar:'radio',invisible:'eye-off',decoy:'map-pin',revive:'heart'};
 
 // Icons as SVG paths for anti-emoji compliance
 const PU_ICONS = {
@@ -1262,12 +1310,13 @@ function renderRulesPU() {
   const el=document.getElementById('rules-pu-list'); if(!el) return;
   el.innerHTML=Object.entries(ALL_POWERUPS).map(([k,v])=>`
     <div class="pu-detail-row">
-      <div class="pu-detail-icon">${PU_ICONS[k]||''}</div>
-      <div>
-        <div class="pu-detail-name">${v.name}${v.teamsOnly?` <span style="font-size:.65rem;color:var(--amber)">(teams only)</span>`:''}</div>
+      <i data-lucide="${LUCIDE_PU_ICONS[k]||'circle'}" class="pu-detail-icon-lucide"></i>
+      <div style="flex:1">
+        <div class="pu-detail-name">${v.name}${v.teamsOnly?` <span style="font-size:12px;font-weight:800;color:var(--amber);letter-spacing:.04em;margin-left:8px">TEAMS ONLY</span>`:''}</div>
         <div class="pu-detail-desc">${v.desc}</div>
       </div>
     </div>`).join('');
+  try{if(window.lucide)window.lucide.createIcons();}catch(e){}
 }
 
 function renderPU() {
@@ -1366,28 +1415,26 @@ function updSettingsPreview(){
   const outsideStr=Math.floor(outside/60)+':'+String(outside%60).padStart(2,'0');
   const radiusStr=radius>=1000?(radius/1000).toFixed(1)+' km':radius+' m';
   const el=document.getElementById('settings-preview'); if(!el) return;
-  const items=[['Duur',dur+' min'],['Grace',grace+' min'],['Straal',radiusStr],['Levens',lives+'x'],['Buiten',outsideStr],['Pulse',pulse+' min'],['Zone rot.',rot+' min'],['Zone PU',zone+' min'],['Krimpt',shrink+'%']];
+  const items=[['DUUR',dur+' min'],['GRACE',grace+' min'],['STRAAL',radiusStr],['LEVENS',lives+'x'],['BUITEN',outsideStr],['PULSE',pulse+' min'],['ZONE ROT.',rot+' min'],['ZONE PU',zone+' min'],['KRIMPT',shrink+'%']];
   el.innerHTML=items.map(([k,v])=>`<div class="sp-item"><div class="sp-key">${k}</div><div class="sp-val">${v}</div></div>`).join('');
+  syncAllSliderVisuals();
+}
+
+const SLIDER_IDS=['cd','s-grace','s-radius','s-lives','s-outside','s-pulse','s-rot','s-zone','s-shrink'];
+function syncAllSliderVisuals(){ SLIDER_IDS.forEach(syncSliderVisual); }
+function syncSliderVisual(id){
+  const el=document.getElementById(id); if(!el)return;
+  const pct=(el.value-el.min)/(el.max-el.min)*100;
+  const fill=document.getElementById(id+'-fill'), thumb=document.getElementById(id+'-thumb');
+  if(fill)fill.style.width=pct+'%';
+  if(thumb)thumb.style.left=pct+'%';
 }
 
 // ══════════════════════════════════════════════════════
 // TOEGANGSCODE VERZILVEREN
 // ══════════════════════════════════════════════════════
-async function redeemAccessCode(){
-  const input=document.getElementById('access-code-input');
-  const code=input.value.trim().toUpperCase();
-  const errEl=document.getElementById('access-code-error');
-  const btn=document.getElementById('redeem-btn');
-  if(errEl)errEl.style.display='none';
-  if(!code){toast('Vul een code in','red');return;}
-
-  if(code===MASTER_ADMIN_CODE){
-    G.accessCode=code; G.codeExpiresAt=null;
-    toast('Mastercode herkend — je bent admin!','green');
-    go('s-create'); return;
-  }
-
-  if(btn){btn.disabled=true;btn.textContent='Controleren...';}
+async function validateAccessCode(code){
+  if(code===MASTER_ADMIN_CODE) return {ok:true,expiresAt:null};
   try{
     const res=await fetch(ACCESS_CODE_API,{
       method:'POST',
@@ -1396,23 +1443,21 @@ async function redeemAccessCode(){
     });
     const data=await res.json();
     if(data.valid){
-      G.accessCode=code;
-      G.codeExpiresAt=data.expiresAt?new Date(data.expiresAt).getTime():(Date.now()+LOBBY_LIFETIME_MS);
-      const expDate=new Date(G.codeExpiresAt);
-      toast('Code geactiveerd! Geldig tot '+expDate.toLocaleDateString('nl-NL',{day:'numeric',month:'short'})+' '+expDate.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}),'green');
-      go('s-create');
-    }else{
-      const msg=data.reason==='expired'?'Deze code is verlopen (72 uur voorbij).':'Ongeldige code — controleer de spelling.';
-      if(errEl){errEl.textContent=msg;errEl.style.display='block';}else toast(msg,'red');
+      const expiresAt=data.expiresAt?new Date(data.expiresAt).getTime():(Date.now()+LOBBY_LIFETIME_MS);
+      return {ok:true,expiresAt};
     }
+    return {ok:false,msg:data.reason==='expired'?'Deze code is verlopen (72 uur voorbij).':'Ongeldige code — controleer de spelling.'};
   }catch(e){
-    toast('Kon code niet verifiëren — controleer je internetverbinding','red');
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='Maak mijn spel';}
+    return {ok:false,msg:'Kon code niet verifiëren — controleer je internetverbinding'};
   }
 }
 
-function createLobby(){
+async function createLobby(){
+  const codeInput=document.getElementById('access-code-input');
+  const code=codeInput?codeInput.value.trim().toUpperCase():'';
+  const codeErrEl=document.getElementById('access-code-error');
+  if(codeErrEl)codeErrEl.style.display='none';
+  if(!code){toast('Vul een toegangscode in','red');return;}
   const n=document.getElementById('cn').value.trim(); if(!n){toast('Vul naam in','red');return;}
   CFG.gameDurMin=parseInt(document.getElementById('cd').value);
   CFG.pulseIntervalMin=parseInt(document.getElementById('s-pulse').value);
@@ -1439,6 +1484,15 @@ function createLobby(){
   const customCodeInput=document.getElementById('custom-lobby-code');
   const customCode=customCodeInput?customCodeInput.value.trim().toUpperCase():'';
   if(customCode&&!/^[A-Z0-9]{3,8}$/.test(customCode)){toast('Lobbycode mag 3-8 letters/cijfers zijn','red');return;}
+
+  if(btn){btn.textContent='Code controleren...';btn.disabled=true;}
+  const codeResult=await validateAccessCode(code);
+  if(!codeResult.ok){
+    if(codeErrEl){codeErrEl.textContent=codeResult.msg;codeErrEl.style.display='block';}else toast(codeResult.msg,'red');
+    if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
+    return;
+  }
+  G.accessCode=code; G.codeExpiresAt=codeResult.expiresAt;
 
   function startWithCode(code){
     G.lobby=code;
@@ -1551,7 +1605,7 @@ function renderLobbySettings(){
   const el=document.getElementById('lobby-settings-preview'); if(!el) return;
   const radiusStr=CFG.radiusMeters>=1000?(CFG.radiusMeters/1000).toFixed(1)+' km':CFG.radiusMeters+' m';
   const items=[['Modus',CFG.mode==='ffa'?'FFA':`${CFG.numTeams}×${CFG.teamSize}`],['Duur',CFG.gameDurMin+' min'],['Grace',CFG.gracePeriodMin+' min'],['Speelveld',radiusStr],['Levens',CFG.lives+'x'],['Buiten zone',Math.floor(CFG.outsideTimeSec/60)+':'+String(CFG.outsideTimeSec%60).padStart(2,'0')],['Pulse',CFG.pulseIntervalMin+' min'],['Zone rot.',CFG.zoneRotMin+' min']];
-  el.innerHTML=items.map(([k,v])=>`<div style="background:var(--zinc-900);border:1px solid var(--zinc-800);border-radius:8px;padding:.4rem .65rem"><div style="font-size:.6rem;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--zinc-600)">${k}</div><div style="font-family:var(--f-mono);font-size:.88rem;font-weight:700;color:var(--zinc-200)">${v}</div></div>`).join('');
+  el.innerHTML=items.map(([k,v])=>`<div style="border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:15px 16px"><div style="font-size:11px;letter-spacing:.12em;font-weight:600;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:7px">${k}</div><div style="font-family:var(--f-mono);font-size:18px;font-weight:800;color:#fff">${v}</div></div>`).join('');
 }
 
 // ══════════════════════════════════════════════════════
@@ -1623,7 +1677,7 @@ function initMap(){
     attribution:'&copy; <a href="https://openstreetmap.org">OSM</a> &copy; <a href="https://carto.com">CARTO</a>',
     subdomains:'abcd',maxZoom:20,maxNativeZoom:19
   }).addTo(map);
-  const myIcon=L.divIcon({html:'<div style="width:14px;height:14px;background:#f43f5e;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 2px #f43f5e"></div>',iconSize:[14,14],iconAnchor:[7,7],className:''});
+  const myIcon=L.divIcon({html:'<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:26px;height:26px;background:#fff;border-radius:50%;border:3px solid #ff2d6f;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(255,45,111,.8)"><div style="width:9px;height:9px;border-radius:50%;background:#ff2d6f"></div></div><span style="font-size:11px;font-weight:800;color:#fff;background:rgba(20,12,15,.75);padding:2px 8px;border-radius:6px;animation:meBlink 2s ease-in-out infinite">JIJ</span></div>',iconSize:[60,50],iconAnchor:[30,18],className:''});
   myMarker=L.marker([CENTER.lat,CENTER.lng],{icon:myIcon}).addTo(map).bindPopup('Jij ('+G.name+')');
   function drawZoneMask(r){
     if(deadOverlay)deadOverlay.remove();
@@ -1633,10 +1687,10 @@ function initMap(){
     for(let i=0;i<=steps;i++){const a=(i/steps)*2*Math.PI;hole.push([lng+Math.cos(a)*r*lngPerMeter,lat+Math.sin(a)*r*latPerMeter]);}
     const outerBox=[[-180,-90],[180,-90],[180,90],[-180,90],[-180,-90]];
     deadOverlay=L.geoJSON({type:'Feature',geometry:{type:'Polygon',coordinates:[outerBox,hole]}},{
-      style:{fillColor:'#e11d48',fillOpacity:.2,color:'transparent',weight:0,interactive:false}
+      style:{fillColor:'#ff2d6f',fillOpacity:.22,color:'transparent',weight:0,interactive:false}
     }).addTo(map);
     if(redBorderCircle)redBorderCircle.remove();
-    redBorderCircle=L.circle([lat,lng],{radius:r,color:'#f43f5e',fill:false,weight:4,interactive:false}).addTo(map);
+    redBorderCircle=L.circle([lat,lng],{radius:r,color:'#ff2d6f',fill:false,weight:4,className:'zone-ring-pulse',interactive:false}).addTo(map);
   }
   drawZoneMask(MAX_RADIUS);
   zoneCircle={_currentR:MAX_RADIUS,_drawZoneMask:drawZoneMask};
@@ -1691,10 +1745,19 @@ function renderPUZones(){
     const z=zones[zoneIdx];
     const puKey=enabledKeys[zoneIdx%enabledKeys.length];
     const pw=ALL_POWERUPS[puKey];
-    const color=offset===0?'#10b981':'#f59e0b';
+    const color=offset===0?'#2bd99a':'#ffb022';
     const circ=L.circle([z.lat,z.lng],{radius:zoneRadius,color,fillColor:color,fillOpacity:.15,weight:2,dashArray:'4 3',interactive:false}).addTo(map);
-    const svgIcon=(PU_ICONS[puKey]||'').replace(/width="\d+"/,'width="22"').replace(/height="\d+"/,'height="22"');
-    const icon=L.divIcon({html:`<div style="color:${color};filter:drop-shadow(0 1px 4px rgba(0,0,0,.7))">${svgIcon}</div>`,className:'',iconAnchor:[11,11]});
+    const svgIcon=(PU_ICONS[puKey]||'').replace(/width="\d+"/,'width="20"').replace(/height="\d+"/,'height="20"');
+    const icon=L.divIcon({
+      html:`<div style="display:flex;flex-direction:column;align-items:center;gap:6px;animation:puFloat 3.4s ease-in-out infinite">
+        <div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center">
+          <div style="position:absolute;inset:0;border-radius:50%;border:2px dashed ${color};opacity:.7;animation:puSpin 7s linear infinite"></div>
+          <div style="width:34px;height:34px;border-radius:50%;background:${color}30;border:2px solid ${color};display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px ${color}90;color:${color}">${svgIcon}</div>
+        </div>
+        <span style="font-size:10px;font-weight:800;letter-spacing:.04em;color:${color};background:rgba(20,12,15,.75);padding:2px 7px;border-radius:6px">${pw.name.toUpperCase()}</span>
+      </div>`,
+      className:'',iconAnchor:[22,40]
+    });
     const marker=L.marker([z.lat,z.lng],{icon}).addTo(map);
     marker.on('click',()=>showPUMapPopup(puKey,color));
     puCircles.push(circ);puMarkers.push(marker);
@@ -1930,7 +1993,7 @@ function renderAdmin(){
             <span class="badge ${p.alive?'badge-alive':'badge-dead'}">${p.alive?'alive':'out'}</span>
             ${p.hasShield?`<span class="badge" style="background:var(--rose-muted);color:var(--rose);font-size:.65rem">Schild</span>`:''}
           </div>
-          <div>${Array.from({length:G.maxLives}).map((_,i)=>`<svg width="11" height="11" viewBox="0 0 24 24" fill="${i<p.lives?'#f43f5e':'#3f3f46'}"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`).join('')}</div>
+          <div>${Array.from({length:G.maxLives}).map((_,i)=>`<svg width="11" height="11" viewBox="0 0 24 24" fill="${i<p.lives?'#ff2d6f':'#3f3f46'}"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`).join('')}</div>
         </div>
         <div style="display:flex;gap:.35rem;flex-shrink:0">
           ${!p.alive?`<button class="btn btn-success btn-sm" onclick="adminRevive(${ti},${pi})">Revive</button>`:''}
@@ -2276,11 +2339,64 @@ function tryRestoreSession(){
 }
 
 // ══════════════════════════════════════════════════════
+// HOME HEADER CANVAS — drijvende roze blobs achter de HUNTER-titel
+// ══════════════════════════════════════════════════════
+function initHunterCanvas(){
+  const canvas=document.getElementById('hunter-header-canvas');
+  if(!canvas)return;
+  const reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ctx=canvas.getContext('2d');
+  let w=0,h=0,t=0;
+  function resize(){
+    const r=canvas.getBoundingClientRect();
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=Math.max(1,r.width*dpr); canvas.height=Math.max(1,r.height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    w=r.width; h=r.height;
+  }
+  resize();
+  new ResizeObserver(resize).observe(canvas);
+  const blobs=[
+    {x:.72,y:.18,r:.62,hue:340,sat:90,light:56,a:.55,sx:.00018,sy:.00011,px:0,py:1.7},
+    {x:.50,y:.55,r:.85,hue:330,sat:85,light:48,a:.40,sx:.00013,sy:.00016,px:2.1,py:.6},
+    {x:.20,y:.30,r:.55,hue:350,sat:80,light:50,a:.34,sx:.00021,sy:.00009,px:4.0,py:3.1},
+    {x:.85,y:.80,r:.50,hue:318,sat:88,light:52,a:.30,sx:.00016,sy:.00014,px:1.2,py:5.0},
+  ];
+  function draw(){
+    if(!canvas.isConnected)return;
+    const r=canvas.getBoundingClientRect();
+    if(r.width>0&&r.height>0&&(Math.abs(r.width-w)>.5||Math.abs(r.height-h)>.5||canvas.width<=1))resize();
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#140a0e'; ctx.fillRect(0,0,w,h);
+    ctx.globalCompositeOperation='lighter';
+    blobs.forEach(b=>{
+      const cx=(b.x+Math.sin(t*b.sx+b.px)*.08)*w;
+      const cy=(b.y+Math.cos(t*b.sy+b.py)*.10)*h;
+      const rad=b.r*Math.max(w,h)*(.9+Math.sin(t*.0004+b.px)*.08);
+      const g=ctx.createRadialGradient(cx,cy,0,cx,cy,rad);
+      g.addColorStop(0,`hsla(${b.hue},${b.sat}%,${b.light}%,${b.a})`);
+      g.addColorStop(.5,`hsla(${b.hue},${b.sat}%,${b.light}%,${b.a*.35})`);
+      g.addColorStop(1,`hsla(${b.hue},${b.sat}%,${b.light}%,0)`);
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,rad,0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalCompositeOperation='source-over';
+    const vg=ctx.createLinearGradient(0,0,0,h);
+    vg.addColorStop(0,'rgba(13,9,11,0)'); vg.addColorStop(1,'rgba(13,9,11,.35)');
+    ctx.fillStyle=vg; ctx.fillRect(0,0,w,h);
+    t+=16;
+    if(!reduceMotion)requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
 initFirebase();
 renderPUToggles();renderRulesPU();updTeamNames();updTeamSummary();updGrace();updRadius();updSettingsPreview();renderLobbyView();renderLobbySettings();
 tryRestoreSession();
+initHunterCanvas();
+try{if(window.lucide)window.lucide.createIcons();}catch(e){}
 </script>
 </body>
 </html>
