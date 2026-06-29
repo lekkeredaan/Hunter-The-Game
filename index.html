@@ -1436,11 +1436,15 @@ function syncSliderVisual(id){
 async function validateAccessCode(code){
   if(code===MASTER_ADMIN_CODE) return {ok:true,expiresAt:null};
   try{
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),8000);
     const res=await fetch(ACCESS_CODE_API,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({code,gameSlug:ACCESS_CODE_GAME_SLUG})
+      body:JSON.stringify({code,gameSlug:ACCESS_CODE_GAME_SLUG}),
+      signal:controller.signal
     });
+    clearTimeout(timeoutId);
     const data=await res.json();
     if(data.valid){
       const expiresAt=data.expiresAt?new Date(data.expiresAt).getTime():(Date.now()+LOBBY_LIFETIME_MS);
@@ -1448,7 +1452,7 @@ async function validateAccessCode(code){
     }
     return {ok:false,msg:data.reason==='expired'?'Deze code is verlopen (72 uur voorbij).':'Ongeldige code — controleer de spelling.'};
   }catch(e){
-    return {ok:false,msg:'Kon code niet verifiëren — controleer je internetverbinding'};
+    return {ok:false,msg:e.name==='AbortError'?'Verifiëren duurde te lang — controleer je internetverbinding en probeer opnieuw.':'Kon code niet verifiëren — controleer je internetverbinding'};
   }
 }
 
