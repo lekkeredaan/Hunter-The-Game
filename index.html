@@ -1573,9 +1573,12 @@ function joinLobby(){
   G.playerNumber=String(10000+Math.floor(Math.random()*89999));
   G.teams=[{name:'FFA',color:0,players:[]}];
   document.getElementById('lc-display').textContent=c;
-  if(!DEMO_MODE&&db){joinLobbyFirebase(c,n);}
-  else{renderLobbyView();renderLobbySettings();}
-  go('s-lobby'); renderLobbyView(); toast('Gejoined!','green');
+  if(!DEMO_MODE&&db){
+    joinLobbyFirebase(c,n);
+  }else{
+    renderLobbyView();renderLobbySettings();
+    go('s-lobby'); renderLobbyView(); toast('Gejoined!','green');
+  }
 }
 
 let _renderLobbyTimer=null;
@@ -2127,7 +2130,8 @@ function joinLobbyFirebase(code,name){
         }
         if(CFG.mode==='teams'){if(G.teams[G.myTeam])G.teams[G.myTeam].players.push(selfData);}
         else{G.teams[0].players.push(selfData);}
-        renderLobbyView();renderLobbySettings();saveSession();
+        go('s-lobby');renderLobbyView();renderLobbySettings();saveSession();
+        toast('Gejoined!','green');
 
         lobbyRef.child('players/'+G.playerNumber).onDisconnect().remove();
         lobbyRef.child('players').on('value',snap2=>{
@@ -2146,6 +2150,9 @@ function joinLobbyFirebase(code,name){
       });
     }
     claimNumber(0);
+  },err=>{
+    toast('Kon lobby niet ophalen ('+err.code+') — controleer je verbinding','red');
+    go('s-join');
   });
 }
 
