@@ -484,6 +484,19 @@ select option{background:#18181b}
 .screen.active>*:nth-child(6){animation-delay:.23s}
 .screen.active>*:nth-child(7){animation-delay:.25s}
 .dot-pulse{animation:livePulse 2s ease-out infinite}
+
+/* ── Home tab card ── */
+.home-tab-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:18px;overflow:hidden}
+.home-tab-switcher{display:grid;grid-template-columns:1fr 1fr;padding:6px;gap:6px;background:rgba(0,0,0,.25)}
+.home-tab-btn{padding:11px 0;border:none;border-radius:11px;font-size:.95rem;font-weight:700;cursor:pointer;transition:background .18s,color .18s;background:transparent;color:rgba(255,255,255,.45)}
+.home-tab-btn.active{background:var(--rose);color:#fff;box-shadow:0 2px 12px rgba(255,45,111,.35)}
+.home-tab-panel{padding:20px 18px 22px;display:flex;flex-direction:column;gap:14px}
+.home-tab-panel[hidden]{display:none}
+.pin-row{display:flex;gap:8px;justify-content:center}
+.pin-box{width:46px;height:54px;border-radius:12px;border:1.5px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#fff;font-size:1.4rem;font-weight:800;font-family:var(--f-mono);text-align:center;text-transform:uppercase;caret-color:var(--rose);transition:border-color .15s,box-shadow .15s;outline:none;-webkit-appearance:none}
+.pin-box:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(255,45,111,.18)}
+.pin-hint{font-size:.78rem;color:rgba(255,255,255,.4);text-align:center;margin-top:-4px}
+.new-game-panel-body{font-size:.85rem;color:rgba(255,255,255,.5);line-height:1.6}
 </style>
 </head>
 <body>
@@ -537,22 +550,35 @@ select option{background:#18181b}
     <span style="font-size:14px;color:rgba(255,255,255,.55)" id="fb-text-home">Demo modus — configureer Firebase voor multiplayer</span>
   </div>
 
-  <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px">
-    <button onclick="go('s-create')" style="text-align:left;cursor:pointer;border:1px solid rgba(255,45,111,.25);background:linear-gradient(135deg,rgba(255,45,111,.10),rgba(255,255,255,.02));border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:6px" class="home-cta-card">
-      <div class="subtitle" style="margin:0">Start een spel</div>
-      <div style="font-size:22px;font-weight:800;color:#fff;line-height:1.2">Lobby aanmaken</div>
-      <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.45)">toegangscode + instellingen</div>
-    </button>
-    <div style="border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">
-      <div class="subtitle" style="align-self:flex-start;margin:0">Zone</div>
-      <div style="position:relative;width:78px;height:78px">
-        <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,45,111,.25)"></div>
-        <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(255,45,111,.4);animation:zonePing 2.4s ease-out infinite"></div>
-        <div style="position:absolute;inset:18px;border-radius:50%;border:1.5px solid rgba(255,45,111,.7);background:rgba(255,45,111,.06);animation:zoneShrink 4s ease-in-out infinite"></div>
-        <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,45,111,.45) 0deg,rgba(255,45,111,0) 70deg,rgba(255,45,111,0) 360deg);animation:radarSweep 3s linear infinite"></div>
-        <div style="position:absolute;left:50%;top:50%;width:5px;height:5px;border-radius:50%;background:var(--rose);transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(255,45,111,.9)"></div>
+  <!-- Meedoen / Nieuw spel tab card -->
+  <div class="home-tab-card">
+    <div class="home-tab-switcher">
+      <button class="home-tab-btn active" id="tab-btn-join" onclick="homeTabSwitch('join')">Meedoen</button>
+      <button class="home-tab-btn" id="tab-btn-create" onclick="homeTabSwitch('create')">Nieuw spel</button>
+    </div>
+
+    <div class="home-tab-panel" id="home-panel-join">
+      <div class="input-group">
+        <label class="input-label">Jouw naam</label>
+        <input id="home-jn" placeholder="bijv. Lisa" maxlength="20" autocomplete="off"/>
       </div>
-      <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,.55)">krimpt</div>
+      <div>
+        <div class="input-label" style="margin-bottom:10px">Lobbycode van je spelleider</div>
+        <div class="pin-row" id="pin-row">
+          <input class="pin-box" maxlength="1" inputmode="text" autocomplete="off"/>
+          <input class="pin-box" maxlength="1" inputmode="text" autocomplete="off"/>
+          <input class="pin-box" maxlength="1" inputmode="text" autocomplete="off"/>
+          <input class="pin-box" maxlength="1" inputmode="text" autocomplete="off"/>
+          <input class="pin-box" maxlength="1" inputmode="text" autocomplete="off"/>
+        </div>
+        <div class="pin-hint">bijv. D A A 4 2</div>
+      </div>
+      <button class="btn btn-primary" onclick="joinFromHome()">Join de lobby →</button>
+    </div>
+
+    <div class="home-tab-panel" id="home-panel-create" hidden>
+      <div class="new-game-panel-body">Maak een nieuwe lobby aan, stel het spel in en deel de code met vrienden.</div>
+      <button class="btn btn-primary" onclick="go('s-create')">Lobby aanmaken →</button>
     </div>
   </div>
 
@@ -567,11 +593,7 @@ select option{background:#18181b}
   </div>
 
   <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem">
-    <button class="btn btn-primary" onclick="go('s-join')">Lobby joinen</button>
     <button class="btn btn-ghost" onclick="go('s-rules')">Spelregels &amp; power-ups</button>
-  </div>
-
-  <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
     <button class="btn btn-danger" onclick="go('s-admin-login')">Admin paneel</button>
   </div>
 </div>
@@ -1566,6 +1588,46 @@ function skipGPS(){
   setTimeout(()=>{try{Object.defineProperty(navigator,'geolocation',{value:origGeo,configurable:true});}catch(e){}},500);
 }
 
+function homeTabSwitch(tab){
+  document.getElementById('tab-btn-join').classList.toggle('active',tab==='join');
+  document.getElementById('tab-btn-create').classList.toggle('active',tab==='create');
+  document.getElementById('home-panel-join').hidden=tab!=='join';
+  document.getElementById('home-panel-create').hidden=tab!=='create';
+}
+
+function initPinBoxes(){
+  const boxes=[...document.querySelectorAll('.pin-box')];
+  boxes.forEach((box,i)=>{
+    box.addEventListener('input',e=>{
+      box.value=box.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(-1);
+      if(box.value&&i<boxes.length-1)boxes[i+1].focus();
+    });
+    box.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'&&!box.value&&i>0){boxes[i-1].focus();boxes[i-1].value='';}
+      if(e.key==='ArrowLeft'&&i>0)boxes[i-1].focus();
+      if(e.key==='ArrowRight'&&i<boxes.length-1)boxes[i+1].focus();
+    });
+    box.addEventListener('paste',e=>{
+      e.preventDefault();
+      const txt=(e.clipboardData||window.clipboardData).getData('text').toUpperCase().replace(/[^A-Z0-9]/g,'');
+      txt.split('').slice(0,boxes.length-i).forEach((ch,j)=>{if(boxes[i+j])boxes[i+j].value=ch;});
+      const next=Math.min(i+txt.length,boxes.length-1);
+      boxes[next].focus();
+    });
+    box.addEventListener('focus',()=>box.select());
+  });
+}
+
+function joinFromHome(){
+  const name=document.getElementById('home-jn').value.trim();
+  const code=[...document.querySelectorAll('.pin-box')].map(b=>b.value).join('').toUpperCase();
+  if(!name){toast('Vul je naam in','red');document.getElementById('home-jn').focus();return;}
+  if(code.length<5){toast('Vul de volledige lobbycode in','red');return;}
+  document.getElementById('jn').value=name;
+  document.getElementById('jc').value=code;
+  joinLobby();
+}
+
 function joinLobby(){
   const n=document.getElementById('jn').value.trim(), c=document.getElementById('jc').value.trim().toUpperCase();
   if(!n||!c){toast('Vul naam en code in','red');return;}
@@ -2405,6 +2467,7 @@ function initHunterCanvas(){
 // ══════════════════════════════════════════════════════
 initFirebase();
 renderPUToggles();renderRulesPU();updTeamNames();updTeamSummary();updGrace();updRadius();updSettingsPreview();renderLobbyView();renderLobbySettings();
+initPinBoxes();
 tryRestoreSession();
 initHunterCanvas();
 try{if(window.lucide)window.lucide.createIcons();}catch(e){}
