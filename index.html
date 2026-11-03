@@ -1556,7 +1556,8 @@ async function createLobby(){
 
   if(customCode&&!DEMO_MODE&&db){
     if(btn){btn.textContent='Code controleren...';btn.disabled=true;}
-    db.ref('lobbies/'+customCode).once('value').then(snap=>{
+    const lobbyCheckTimeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000));
+    Promise.race([db.ref('lobbies/'+customCode).once('value'),lobbyCheckTimeout]).then(snap=>{
       const existing=snap.val();
       const expired=existing&&existing.expiresAt&&Date.now()>existing.expiresAt;
       if(existing&&!expired){
@@ -1565,6 +1566,9 @@ async function createLobby(){
         return;
       }
       startWithCode(customCode);
+    }).catch(()=>{
+      toast('Kon lobbycode niet controleren — controleer je internet en probeer opnieuw','red');
+      if(btn){btn.textContent='GPS ophalen & aanmaken';btn.disabled=false;}
     });
     return;
   }
