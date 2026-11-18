@@ -207,6 +207,8 @@ select option{background:#18181b}
 /* ── MAP ── */
 .map-wrap{border-radius:16px;overflow:hidden;border:1px solid var(--zinc-800);height:260px;position:relative;box-shadow:0 4px 24px rgba(0,0,0,.35)}
 #leafmap{height:100%;width:100%}
+/* OSM-tegels donker maken (vervangt CARTO dark_all, die nu een API-sleutel wil) */
+.map-dark{filter:invert(1) hue-rotate(180deg) brightness(.82) contrast(.92) saturate(.6)}
 
 /* ── LEAFLET DARK THEME ── */
 .leaflet-control-zoom{border:1px solid var(--zinc-700)!important;border-radius:10px!important;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.5)!important}
@@ -1744,9 +1746,11 @@ function initMap(){
   const el=document.getElementById('leafmap'); if(!el) return;
   const zoom=MAX_RADIUS<=200?16:MAX_RADIUS<=500?15:MAX_RADIUS<=1000?14:MAX_RADIUS<=1500?13:12;
   map=L.map('leafmap',{zoomControl:true}).setView([CENTER.lat,CENTER.lng],zoom);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-    attribution:'&copy; <a href="https://openstreetmap.org">OSM</a> &copy; <a href="https://carto.com">CARTO</a>',
-    subdomains:'abcd',maxZoom:20,maxNativeZoom:19
+  // CARTO dark_all vraagt sinds nov 2026 een API-sleutel (tegels tonen "API KEY REQUIRED").
+  // Daarom gewone OSM-tegels (zoals Zwarte Markt), donker gemaakt met een CSS-filter (.map-dark).
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+    subdomains:'abc',maxZoom:20,maxNativeZoom:19,className:'map-dark'
   }).addTo(map);
   const myIcon=L.divIcon({html:'<div style="display:flex;flex-direction:column;align-items:center;gap:5px"><div style="width:26px;height:26px;background:#fff;border-radius:50%;border:3px solid #ff2d6f;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(255,45,111,.8)"><div style="width:9px;height:9px;border-radius:50%;background:#ff2d6f"></div></div><span style="font-size:11px;font-weight:800;color:#fff;background:rgba(20,12,15,.75);padding:2px 8px;border-radius:6px;animation:meBlink 2s ease-in-out infinite">JIJ</span></div>',iconSize:[60,50],iconAnchor:[30,18],className:''});
   myMarker=L.marker([CENTER.lat,CENTER.lng],{icon:myIcon}).addTo(map).bindPopup('Jij ('+G.name+')');
