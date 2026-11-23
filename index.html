@@ -588,8 +588,8 @@ select option{background:#18181b}
     <div class="subtitle" style="margin-bottom:22px">Hoe werkt het</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       <div class="how-to-item"><div class="how-to-num">1</div><div class="how-to-text">Maak een lobby aan en deel de code met vrienden</div></div>
-      <div class="how-to-item"><div class="how-to-num">2</div><div class="how-to-text">Iedereen krijgt een uniek 5-cijferig nummer — print dit op je rug</div></div>
-      <div class="how-to-item"><div class="how-to-num">3</div><div class="how-to-text">Zie je iemands nummer? Typ het in om hem te elimineren</div></div>
+      <div class="how-to-item"><div class="how-to-num">2</div><div class="how-to-text">Vul je signalement in en maak een selfie — zo herkent het spel jou</div></div>
+      <div class="how-to-item"><div class="how-to-num">3</div><div class="how-to-text">Zie je je doelwit? Loop dichtbij en maak een foto om te elimineren</div></div>
       <div class="how-to-item"><div class="how-to-num">4</div><div class="how-to-text">Verdien power-ups en overleef de krimpende zone</div></div>
     </div>
   </div>
@@ -613,11 +613,11 @@ select option{background:#18181b}
   <div class="surface">
     <div class="rule-block">
       <div class="rule-title">Doel</div>
-      <div class="rule-body">Elimineer alle andere spelers door hun 5-cijferig nummer in te typen. De laatste speler of het laatste team dat nog leeft wint.</div>
+      <div class="rule-body">Elimineer alle andere spelers door dichtbij te komen en een foto te maken. De laatste speler of het laatste team dat nog leeft wint.</div>
     </div>
     <div class="rule-block">
       <div class="rule-title">Hoe speel je?</div>
-      <div class="rule-body"><ul><li>Iedereen print zijn nummerbord uit en plakt het op zijn rug.</li><li>Zie je een nummer? Typ het in via de "Nummer" tab.</li><li>Blijf binnen de rode cirkel — te lang buiten is automatisch af.</li><li>Iedereen start met het ingestelde aantal levens.</li></ul></div>
+      <div class="rule-body"><ul><li>Vul bij het joinen je signalement in en maak een selfie.</li><li>Zie je je doelwit? Loop binnen 25 meter en tik "Raak" om een foto te maken.</li><li>AI controleert of de foto klopt — twijfel? Dan kun je een override aanvragen.</li><li>Blijf binnen de rode cirkel — te lang buiten is automatisch af.</li><li>Iedereen start met het ingestelde aantal levens.</li></ul></div>
     </div>
     <div class="rule-block">
       <div class="rule-title">Pulse</div>
@@ -846,32 +846,123 @@ select option{background:#18181b}
   <button class="btn btn-primary" onclick="startGame()">Spel starten</button>
 </div>
 
-<!-- ══════════════════════ NUMBER CARD ══════════════════════ -->
-<div class="screen" id="s-number">
+<!-- ══════════════════════ SIGNALEMENT ══════════════════════ -->
+<div class="screen" id="s-signalement">
   <div class="screen-header">
     <button class="btn-back" onclick="go('s-lobby')">
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" d="M15 19l-7-7 7-7"/></svg>
       Lobby
     </button>
   </div>
-  <div class="title-wrap"><div class="title">Jouw nummer</div></div>
+  <div class="title-wrap"><div class="title">Jouw signalement</div></div>
+  <div class="body-sm">Vul in wat je vandaag draagt. Andere spelers zien dit als ze jou moeten vinden.</div>
 
-  <div class="surface" style="align-items:center;display:flex;flex-direction:column;gap:.5rem;padding:1.5rem">
-    <div class="number-card" id="number-card-inner">
-      <div class="number-card-game">HUNTER</div>
-      <div class="number-big" id="player-big-num">12345</div>
-      <div class="number-name" id="player-num-name">Daan</div>
-      <div id="number-hearts" style="display:flex;gap:3px;margin-top:2px"></div>
-      <div id="player-num-team" style="display:none"></div>
+  <div class="surface" style="display:flex;flex-direction:column;gap:.85rem">
+    <div class="input-group">
+      <label class="input-label">Lengte</label>
+      <select id="sig-lengte" class="target-input" style="font-size:1rem;padding:.6rem .75rem">
+        <option value="">— kies —</option>
+        <option value="klein">Klein (&lt;1,65m)</option>
+        <option value="gemiddeld">Gemiddeld (1,65–1,80m)</option>
+        <option value="groot">Groot (&gt;1,80m)</option>
+      </select>
     </div>
-    <div class="body-sm" style="text-align:center;margin-top:.25rem">
-      Print dit op A4 — plak op je rug<br>
-      <span style="color:var(--rose);font-size:.8rem">Zo groot mogelijk voor maximale zichtbaarheid</span>
+    <div class="input-group">
+      <label class="input-label">Bovenkledij</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <select id="sig-boven-kleur" class="target-input" style="font-size:.95rem;padding:.6rem .6rem">
+          <option value="">kleur</option>
+          <option value="wit">Wit</option>
+          <option value="zwart">Zwart</option>
+          <option value="grijs">Grijs</option>
+          <option value="blauw">Blauw</option>
+          <option value="rood">Rood</option>
+          <option value="groen">Groen</option>
+          <option value="geel">Geel</option>
+          <option value="oranje">Oranje</option>
+          <option value="bruin">Bruin</option>
+          <option value="paars">Paars</option>
+          <option value="roze">Roze</option>
+          <option value="beige">Beige</option>
+        </select>
+        <select id="sig-boven-type" class="target-input" style="font-size:.95rem;padding:.6rem .6rem">
+          <option value="">type</option>
+          <option value="t-shirt">T-shirt</option>
+          <option value="trui">Trui/sweater</option>
+          <option value="hoodie">Hoodie</option>
+          <option value="jas">Jas</option>
+          <option value="vest">Vest</option>
+          <option value="overhemd">Overhemd</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Onderkledij</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <select id="sig-onder-kleur" class="target-input" style="font-size:.95rem;padding:.6rem .6rem">
+          <option value="">kleur</option>
+          <option value="wit">Wit</option>
+          <option value="zwart">Zwart</option>
+          <option value="grijs">Grijs</option>
+          <option value="blauw">Blauw</option>
+          <option value="rood">Rood</option>
+          <option value="groen">Groen</option>
+          <option value="geel">Geel</option>
+          <option value="beige">Beige</option>
+          <option value="bruin">Bruin</option>
+        </select>
+        <select id="sig-onder-type" class="target-input" style="font-size:.95rem;padding:.6rem .6rem">
+          <option value="">type</option>
+          <option value="broek">Broek (lang)</option>
+          <option value="short">Short</option>
+          <option value="rok">Rok</option>
+          <option value="jogger">Jogger</option>
+        </select>
+      </div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Hoofddeksel</label>
+      <select id="sig-hoofd" class="target-input" style="font-size:1rem;padding:.6rem .75rem">
+        <option value="geen">Geen</option>
+        <option value="pet">Pet</option>
+        <option value="muts">Muts/beanie</option>
+        <option value="capuchon">Capuchon op</option>
+        <option value="hoed">Hoed</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Gezichtsbeharing</label>
+      <select id="sig-baard" class="target-input" style="font-size:1rem;padding:.6rem .75rem">
+        <option value="geen">Geen</option>
+        <option value="stoppels">Stoppels</option>
+        <option value="baard">Baard</option>
+        <option value="snor">Snor</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label class="input-label">Huidskleur</label>
+      <select id="sig-huid" class="target-input" style="font-size:1rem;padding:.6rem .75rem">
+        <option value="">— kies —</option>
+        <option value="licht">Licht</option>
+        <option value="gemiddeld">Gemiddeld/getint</option>
+        <option value="donker">Donker</option>
+      </select>
     </div>
   </div>
 
-  <button class="btn btn-ghost" onclick="window.print()">Afdrukken</button>
-  <button class="btn btn-primary" onclick="go('s-game')">Naar de kaart</button>
+  <!-- Selfie sectie -->
+  <div class="surface" style="display:flex;flex-direction:column;gap:.75rem;align-items:center">
+    <div class="subtitle">Referentie-selfie</div>
+    <div class="body-sm" style="text-align:center">Maak een duidelijke selfie van je gezicht. Dit gebruikt het spel als AI-verificatie bij een raak-poging.</div>
+    <div id="selfie-preview" style="display:none;width:140px;height:140px;border-radius:12px;overflow:hidden;border:2px solid var(--rose)">
+      <img id="selfie-img" style="width:100%;height:100%;object-fit:cover" alt="selfie"/>
+    </div>
+    <input type="file" id="selfie-input" accept="image/*" capture="user" style="display:none" onchange="onSelfieChosen(this)"/>
+    <button class="btn btn-ghost" onclick="document.getElementById('selfie-input').click()" id="selfie-btn">📷 Selfie maken</button>
+    <div id="selfie-uploading" style="display:none;font-size:.85rem;color:var(--zinc-400)">Uploaden…</div>
+  </div>
+
+  <button class="btn btn-primary" onclick="saveSignalement()" id="sig-save-btn">Opslaan &amp; naar de kaart →</button>
 </div>
 
 <!-- ══════════════════════ GAME ══════════════════════ -->
@@ -892,7 +983,7 @@ select option{background:#18181b}
     </div>
     <div class="nav-tabs">
       <button class="nav-tab active" id="tab-map" onclick="switchTab('map')">Kaart</button>
-      <button class="nav-tab" id="tab-enter" onclick="switchTab('enter')">Nummer</button>
+      <button class="nav-tab" id="tab-enter" onclick="switchTab('enter')">Raak</button>
       <button class="nav-tab" id="tab-lb" onclick="switchTab('lb')">Score</button>
       <button class="nav-tab" id="tab-admin-btn" onclick="go('s-admin')" style="display:none;color:var(--amber)">Admin</button>
     </div>
@@ -948,27 +1039,42 @@ select option{background:#18181b}
       <div class="pu-grid" id="pu-slots"></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
-      <button class="btn btn-primary" onclick="switchTab('enter')">Nummer invoeren</button>
-      <button class="btn btn-ghost" onclick="go('s-number')">Mijn nummer</button>
+      <button class="btn btn-primary" onclick="switchTab('enter')">Raak schieten</button>
+      <button class="btn btn-ghost" onclick="go('s-signalement')">Mijn signalement</button>
     </div>
   </div>
 
-  <!-- ENTER NUMBER TAB -->
+  <!-- RAAK TAB -->
   <div id="tab-enter-content" style="display:none">
-    <div class="surface" style="display:flex;flex-direction:column;gap:.75rem">
-      <div class="subtitle">Nummer van je doelwit</div>
-      <input class="target-input" id="target-number" type="tel" maxlength="5" placeholder="_ _ _ _ _" oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
-      <div class="input-hint" style="text-align:center">Typ het 5-cijferig nummer van de rug van je tegenstander</div>
-      <button class="btn btn-primary" onclick="doEliminate()">Elimineer</button>
+    <div class="surface" style="display:flex;flex-direction:column;gap:.6rem">
+      <div class="subtitle">Kies je doelwit</div>
+      <div class="body-sm">Loop dichtbij (&lt;25m) en tik op een speler om een foto te maken.</div>
+      <div id="raak-player-list" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.25rem"></div>
     </div>
     <div class="surface" style="margin-top:.5rem">
       <div class="subtitle" style="margin-bottom:.55rem">Jouw power-ups</div>
       <div class="pu-grid" id="pu-slots-enter"></div>
     </div>
-    <div class="surface" style="margin-top:.5rem;text-align:center;padding:1.25rem">
-      <div class="input-hint" style="margin-bottom:.4rem">Jouw eigen nummer</div>
-      <div class="mono" style="font-size:2.8rem;font-weight:700;letter-spacing:8px;color:var(--zinc-50)" id="my-number-display">—</div>
+  </div>
+
+  <!-- RAAK FOTO OVERLAY -->
+  <div id="raak-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(9,9,11,.96);backdrop-filter:blur(8px);flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:2rem;text-align:center">
+    <div style="font-size:1.1rem;font-weight:700;color:var(--zinc-200)" id="raak-overlay-name">Doelwit</div>
+    <div class="surface" style="width:100%;max-width:360px;padding:1rem">
+      <div class="subtitle" style="margin-bottom:.5rem">Signalement</div>
+      <div id="raak-overlay-sig" style="font-size:.9rem;color:var(--zinc-300);line-height:1.7"></div>
     </div>
+    <div id="raak-shot-preview" style="display:none;width:200px;height:200px;border-radius:12px;overflow:hidden;border:2px solid var(--rose)">
+      <img id="raak-shot-img" style="width:100%;height:100%;object-fit:cover" alt="foto"/>
+    </div>
+    <input type="file" id="raak-camera-input" accept="image/*" capture="environment" style="display:none" onchange="onRaakFotoChosen(this)"/>
+    <button class="btn btn-primary" style="width:100%;max-width:280px" onclick="document.getElementById('raak-camera-input').click()" id="raak-foto-btn">📷 Foto maken</button>
+    <div id="raak-checking" style="display:none;font-size:.85rem;color:var(--zinc-400)">GPS + AI checken…</div>
+    <button class="btn btn-primary" style="width:100%;max-width:280px;display:none" onclick="submitRaak()" id="raak-submit-btn">✓ Bevestig raak</button>
+    <div id="raak-result" style="display:none;padding:.75rem 1rem;border-radius:10px;width:100%;max-width:280px;font-size:.9rem;font-weight:600"></div>
+    <button class="btn btn-ghost" style="width:100%;max-width:280px" onclick="sluitRaakOverlay()">Annuleren</button>
+    <!-- Override knop: alleen zichtbaar als GPS-check faalt maar speler wil AI proberen -->
+    <button class="btn btn-ghost" id="raak-override-btn" style="display:none;width:100%;max-width:280px;color:var(--amber)" onclick="startAIOverride()">🔍 Override: AI-check aanvragen</button>
   </div>
 
   <!-- LB TAB -->
@@ -1201,7 +1307,8 @@ function go(id) {
   }
   if (id==='s-admin') renderAdmin();
   if (id==='s-rules') renderRulesPU();
-  if (id==='s-number') renderNumberCard();
+  if (id==='s-signalement') renderRaakPlayerList();
+  if (id==='s-game') renderRaakPlayerList();
 }
 
 function toast(msg, type='') {
@@ -1296,19 +1403,243 @@ function renderHearts(el, lives, maxLives) {
   el.innerHTML = Array.from({length:maxLives},(_,i)=>`<svg width="14" height="14" viewBox="0 0 24 24" fill="${i<lives?'#f43f5e':'#3f3f46'}" style="opacity:${i<lives?1:.3}"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>`).join('');
 }
 
-function renderNumberCard() {
-  const el=document.getElementById('player-big-num'); if(el) el.textContent=G.playerNumber||'—';
-  const nameEl=document.getElementById('player-num-name'); if(nameEl) nameEl.textContent=G.name;
-  renderHearts(document.getElementById('number-hearts'),G.lives,G.maxLives);
-  const tb=document.getElementById('player-num-team');
-  if(tb){
-    if(CFG.mode==='teams'&&G.teams[G.myTeam]){
-      const tc=TEAM_COLORS[G.teams[G.myTeam].color];
-      tb.style.cssText=tc.badge+';padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:600;margin-top:3px';
-      tb.textContent=G.teams[G.myTeam].name; tb.style.display='block';
-    } else tb.style.display='none';
+// ══════════════════════════════════════════════════════
+// SIGNALEMENT
+// ══════════════════════════════════════════════════════
+let selfieBase64 = null; // base64 van de referentie-selfie (na upload: null, URL staat in Firebase)
+
+function onSelfieChosen(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    selfieBase64 = e.target.result;
+    document.getElementById('selfie-img').src = selfieBase64;
+    document.getElementById('selfie-preview').style.display = 'block';
+    document.getElementById('selfie-btn').textContent = '📷 Opnieuw maken';
+  };
+  reader.readAsDataURL(file);
+}
+
+function signalementsText(sig) {
+  if (!sig) return 'Geen signalement ingevuld';
+  const delen = [];
+  if (sig.lengte) delen.push(sig.lengte.charAt(0).toUpperCase() + sig.lengte.slice(1));
+  if (sig.bovenKleur && sig.bovenType) delen.push(sig.bovenKleur + ' ' + sig.bovenType);
+  if (sig.onderKleur && sig.onderType) delen.push(sig.onderKleur + ' ' + sig.onderType);
+  if (sig.hoofd && sig.hoofd !== 'geen') delen.push(sig.hoofd);
+  if (sig.baard && sig.baard !== 'geen') delen.push(sig.baard);
+  if (sig.huid) delen.push('Huid: ' + sig.huid);
+  return delen.join(' · ') || 'Onvolledig';
+}
+
+async function saveSignalement() {
+  const lengte = document.getElementById('sig-lengte').value;
+  const bovenKleur = document.getElementById('sig-boven-kleur').value;
+  const bovenType = document.getElementById('sig-boven-type').value;
+  const onderKleur = document.getElementById('sig-onder-kleur').value;
+  const onderType = document.getElementById('sig-onder-type').value;
+  const hoofd = document.getElementById('sig-hoofd').value;
+  const baard = document.getElementById('sig-baard').value;
+  const huid = document.getElementById('sig-huid').value;
+
+  if (!lengte || !bovenKleur || !bovenType || !onderKleur || !huid) {
+    toast('Vul lengte, boven- en onderkledij en huidskleur in', 'red'); return;
   }
-  const nd=document.getElementById('my-number-display'); if(nd) nd.textContent=G.playerNumber||'—';
+  if (!selfieBase64) {
+    toast('Maak eerst een selfie', 'red'); return;
+  }
+
+  const btn = document.getElementById('sig-save-btn');
+  btn.disabled = true; btn.textContent = 'Selfie uploaden…';
+  document.getElementById('selfie-uploading').style.display = 'block';
+
+  try {
+    // Upload selfie naar Vercel Blob
+    const resp = await fetch('/api/upload-photo', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        imageBase64: selfieBase64,
+        lobbyCode: G.lobby,
+        playerNumber: G.playerNumber,
+      }),
+    });
+    if (!resp.ok) throw new Error('Upload mislukt: ' + resp.status);
+    const { url } = await resp.json();
+
+    // Sla signalement + foto-URL op in Firebase
+    const sig = { lengte, bovenKleur, bovenType, onderKleur, onderType, hoofd, baard, huid };
+    if (!DEMO_MODE && db && lobbyRef) {
+      await lobbyRef.child('players/' + G.playerNumber + '/signalement').set(sig);
+      await lobbyRef.child('players/' + G.playerNumber + '/photoUrl').set(url);
+    }
+    G.mySig = sig; G.myPhotoUrl = url;
+    selfieBase64 = null; // niet meer nodig in geheugen
+    go('s-game');
+  } catch(e) {
+    toast('Fout: ' + e.message, 'red');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Opslaan & naar de kaart →';
+    document.getElementById('selfie-uploading').style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// RAAK — spelerlijst + foto-flow
+// ══════════════════════════════════════════════════════
+let raakTargetNumber = null; // nummer van het geselecteerde doelwit
+let raakShotBase64 = null;   // base64 van de net gemaakte foto
+let raakGPSOK = false;       // GPS-check geslaagd
+let raakAIResult = null;     // resultaat van AI-check
+
+function renderRaakPlayerList() {
+  const list = document.getElementById('raak-player-list');
+  if (!list) return;
+  const spelers = allPlayers().filter(p => p.alive && p.number !== G.playerNumber);
+  if (spelers.length === 0) {
+    list.innerHTML = '<div class="body-sm" style="text-align:center;padding:1rem">Geen andere spelers actief.</div>';
+    return;
+  }
+  list.innerHTML = spelers.map(p => {
+    const sig = p.signalement ? signalementsText(p.signalement) : '— geen signalement —';
+    const teamLabel = CFG.mode === 'teams' && p.teamIdx !== undefined
+      ? `<span style="font-size:.7rem;color:var(--zinc-500);margin-left:4px">${G.teams[p.teamIdx]?.name||''}</span>` : '';
+    const isEnemy = CFG.mode !== 'teams' || p.teamIdx !== G.myTeam;
+    if (!isEnemy) return ''; // teamgenoot overslaan
+    return `<div class="surface" style="padding:.75rem 1rem;cursor:pointer;border:1px solid transparent;transition:border-color .2s"
+      onclick="openRaakOverlay('${p.number}')"
+      onmouseenter="this.style.borderColor='var(--rose)'" onmouseleave="this.style.borderColor='transparent'">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-weight:600;font-size:.95rem">${p.name}${teamLabel}</div>
+        <div style="font-size:.8rem;color:var(--zinc-400)">${p.lives} lev${p.lives===1?'en':'ens'}</div>
+      </div>
+      <div style="font-size:.8rem;color:var(--zinc-400);margin-top:.2rem">${sig}</div>
+    </div>`;
+  }).join('');
+}
+
+function openRaakOverlay(targetNum) {
+  const target = allPlayers().find(p => p.number === targetNum);
+  if (!target) return;
+  raakTargetNumber = targetNum;
+  raakShotBase64 = null;
+  raakGPSOK = false;
+  raakAIResult = null;
+
+  document.getElementById('raak-overlay-name').textContent = target.name + ' — doelwit';
+  document.getElementById('raak-overlay-sig').textContent = signalementsText(target.signalement);
+  document.getElementById('raak-shot-preview').style.display = 'none';
+  document.getElementById('raak-submit-btn').style.display = 'none';
+  document.getElementById('raak-override-btn').style.display = 'none';
+  document.getElementById('raak-checking').style.display = 'none';
+  document.getElementById('raak-result').style.display = 'none';
+  document.getElementById('raak-foto-btn').disabled = false;
+  document.getElementById('raak-foto-btn').textContent = '📷 Foto maken';
+  document.getElementById('raak-camera-input').value = '';
+
+  const overlay = document.getElementById('raak-overlay');
+  overlay.style.display = 'flex';
+}
+
+function sluitRaakOverlay() {
+  document.getElementById('raak-overlay').style.display = 'none';
+  raakTargetNumber = null; raakShotBase64 = null;
+}
+
+function onRaakFotoChosen(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    raakShotBase64 = e.target.result;
+    document.getElementById('raak-shot-img').src = raakShotBase64;
+    document.getElementById('raak-shot-preview').style.display = 'block';
+    document.getElementById('raak-foto-btn').textContent = '📷 Opnieuw maken';
+    await checkRaak();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function checkRaak() {
+  const target = allPlayers().find(p => p.number === raakTargetNumber);
+  if (!target || !raakShotBase64) return;
+
+  document.getElementById('raak-checking').style.display = 'block';
+  document.getElementById('raak-submit-btn').style.display = 'none';
+  document.getElementById('raak-override-btn').style.display = 'none';
+  const resultEl = document.getElementById('raak-result');
+  resultEl.style.display = 'none';
+
+  // — GPS CHECK —
+  const targetPos = playerPositions.get(raakTargetNumber);
+  let gpsOK = false;
+  if (G.gpsLat && targetPos) {
+    const dist = haversineM(G.gpsLat, G.gpsLng, targetPos.lat, targetPos.lng);
+    gpsOK = dist <= 25;
+  }
+  raakGPSOK = gpsOK;
+
+  document.getElementById('raak-checking').style.display = 'none';
+
+  if (gpsOK) {
+    // GPS OK → direct raak mogen bevestigen
+    resultEl.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:10px;width:100%;max-width:280px;font-size:.9rem;font-weight:600;background:var(--emerald-muted);color:var(--emerald)';
+    resultEl.textContent = '✓ GPS: binnen 25 meter — bevestig de raak!';
+    document.getElementById('raak-submit-btn').style.display = 'block';
+  } else {
+    // GPS niet OK → override aanbieden
+    resultEl.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:10px;width:100%;max-width:280px;font-size:.9rem;font-weight:600;background:var(--amber-muted);color:var(--amber)';
+    resultEl.textContent = '⚠ GPS niet binnen 25m — gebruik AI-override als je zeker weet dat je naast ' + target.name + ' staat.';
+    document.getElementById('raak-override-btn').style.display = 'block';
+  }
+}
+
+async function startAIOverride() {
+  const target = allPlayers().find(p => p.number === raakTargetNumber);
+  if (!target || !raakShotBase64) return;
+  if (!target.photoUrl) {
+    toast(target.name + ' heeft geen referentie-selfie — override niet mogelijk', 'red');
+    return;
+  }
+
+  document.getElementById('raak-override-btn').style.display = 'none';
+  document.getElementById('raak-checking').style.display = 'block';
+  document.getElementById('raak-checking').textContent = 'AI-check bezig…';
+
+  try {
+    const resp = await fetch('/api/verify-hit', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ shotBase64: raakShotBase64, referenceUrl: target.photoUrl }),
+    });
+    if (!resp.ok) throw new Error('AI-check mislukt: ' + resp.status);
+    raakAIResult = await resp.json();
+  } catch(e) {
+    toast('AI-check fout: ' + e.message, 'red');
+    document.getElementById('raak-checking').style.display = 'none';
+    document.getElementById('raak-override-btn').style.display = 'block';
+    return;
+  }
+  document.getElementById('raak-checking').style.display = 'none';
+
+  const resultEl = document.getElementById('raak-result');
+  if (raakAIResult.match) {
+    resultEl.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:10px;width:100%;max-width:280px;font-size:.9rem;font-weight:600;background:var(--emerald-muted);color:var(--emerald)';
+    resultEl.textContent = '✓ AI match (' + Math.round((raakAIResult.confidence||0)*100) + '%) — ' + (raakAIResult.reason||'');
+    document.getElementById('raak-submit-btn').style.display = 'block';
+  } else {
+    resultEl.style.cssText = 'display:block;padding:.75rem 1rem;border-radius:10px;width:100%;max-width:280px;font-size:.9rem;font-weight:600;background:var(--rose-muted);color:var(--rose)';
+    resultEl.textContent = '✗ Geen match (' + Math.round((raakAIResult.confidence||0)*100) + '%) — ' + (raakAIResult.reason||'Verkeerde persoon');
+    document.getElementById('raak-override-btn').style.display = 'block'; // opnieuw proberen
+  }
+}
+
+function submitRaak() {
+  if (!raakTargetNumber) return;
+  // Hergebruik de bestaande eliminatielogica
+  doEliminateByNumber(raakTargetNumber);
+  sluitRaakOverlay();
 }
 
 function renderPUToggles() {
@@ -1703,7 +2034,7 @@ function startGame(){
   renderPU();startTimers();
   const adminTab=document.getElementById('tab-admin-btn');if(adminTab)adminTab.style.display=G.isHost?'':'none';
   if(!DEMO_MODE&&db&&G.isHost)syncGameStartToFirebase();
-  go('s-number');
+  go('s-signalement');
 }
 
 // ══════════════════════════════════════════════════════
@@ -1875,49 +2206,47 @@ function switchTab(t){
     document.getElementById('tab-'+x).classList.toggle('active',x===t);
   });
   if(t==='lb')renderLeaderboard();
-  if(t==='enter'){renderPU();const nd=document.getElementById('my-number-display');if(nd)nd.textContent=G.playerNumber||'—';}
+  if(t==='enter'){renderPU();renderRaakPlayerList();}
 }
 
 // ══════════════════════════════════════════════════════
 // ELIMINATE
 // ══════════════════════════════════════════════════════
 function doEliminate(){
+  // Behouden als compat-wrapper; de nieuwe flow gaat via doEliminateByNumber
+  if(raakTargetNumber) doEliminateByNumber(raakTargetNumber);
+}
+
+function doEliminateByNumber(num){
   if(G.graceActive){
     const rem=G.graceRemaining;
     toast('Grace period! Nog '+Math.floor(rem/60)+':'+String(rem%60).padStart(2,'0'),'red');
     return;
   }
-  const input=document.getElementById('target-number');
-  const num=input.value.trim();
-  if(num.length!==5){toast('Voer een geldig 5-cijferig nummer in','red');return;}
-  if(num===G.playerNumber){toast('Dat is jouw eigen nummer!','red');return;}
+  if(!num||num===G.playerNumber){toast('Ongeldig doelwit','red');return;}
   const target=allPlayers().find(p=>p.number===num);
-  if(!target){toast('Nummer '+num+' niet gevonden','red');return;}
+  if(!target){toast('Speler niet gevonden','red');return;}
   if(!target.alive){toast(target.name+' is al geëlimineerd','red');return;}
   if(CFG.mode==='teams'&&target.teamIdx===G.myTeam){toast('Dat is een teamgenoot!','red');return;}
-  // Check schild grace periode
   if(target.shieldGraceUntil&&Date.now()<target.shieldGraceUntil){
     const rem=Math.ceil((target.shieldGraceUntil-Date.now())/1000);
-    toast(target.name+' is beschermd nog '+rem+'s','red');input.value='';return;
+    toast(target.name+' is beschermd nog '+rem+'s','red');return;
   }
-  // Check immuniteit na recente treffer (1 minuut om te verstoppen)
   if(target.hitGraceUntil&&Date.now()<target.hitGraceUntil){
     const rem=Math.ceil((target.hitGraceUntil-Date.now())/1000);
-    toast(target.name+' is nog onaantastbaar — nog '+rem+'s','red');input.value='';return;
+    toast(target.name+' is nog onaantastbaar — nog '+rem+'s','red');return;
   }
-  // Check scanner-cooldown (voorkomt dezelfde code meerdere keren invoeren)
   const lastScan=scanCooldowns.get(num);
   if(lastScan&&Date.now()-lastScan<SCAN_COOLDOWN_MS){
     const remS=Math.ceil((SCAN_COOLDOWN_MS-(Date.now()-lastScan))/1000);
     const remStr=Math.floor(remS/60)+':'+String(remS%60).padStart(2,'0');
-    toast('Wacht nog '+remStr+' voor je '+target.name+' opnieuw kunt scannen','red');
-    input.value='';return;
+    toast('Wacht nog '+remStr+' voor je '+target.name+' opnieuw kunt raken','red');return;
   }
   const hasShield=target.hasShield;
   const hasPiercing=G.powerups.includes('piercing');
   if(hasShield&&!hasPiercing){
     toast(target.name+' heeft een schild — geblokkeerd!','red');
-    addLog('Scan geblokkeerd: schild op '+target.name);
+    addLog('Raak geblokkeerd: schild op '+target.name);
     G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p)delete p.hasShield;});
     if(!DEMO_MODE&&db&&lobbyRef){
       const graceUntil=Date.now()+30000;
@@ -1925,28 +2254,23 @@ function doEliminate(){
       lobbyRef.child('players/'+num+'/shieldGraceUntil').set(graceUntil);
       lobbyRef.child('shieldHits/'+num).set({by:G.name,ts:Date.now()});
     }
-    input.value='';return;
+    return;
   }
   if(hasShield&&hasPiercing){G.powerups[G.powerups.indexOf('piercing')]=null;toast('Piercing shot — schild doorboord!');addLog('Piercing shot op '+target.name);}
   G.kills++;
-  // Optimistische lokale update voor instant feedback — de Firebase-transactie in
-  // syncKillToFirebase is de bron van waarheid en corrigeert dit zo nodig.
   const hitGraceUntil=Date.now()+60000;
   G.teams.forEach(t=>{const p=t.players.find(p=>p.number===num);if(p){p.lives=Math.max(0,p.lives-1);if(p.lives<=0){p.alive=false;}else{p.hitGraceUntil=hitGraceUntil;}delete p.hasShield;}});
-  // Bug fix: kills opslaan bij de juiste speler (niet altijd players[0])
   const myPlayer=allPlayers().find(p=>p.number===G.playerNumber);
   if(myPlayer)myPlayer.kills=G.kills;
   document.getElementById('g-kills').textContent=G.kills;
-  // Scan-cooldown instellen (3 minuten)
   scanCooldowns.set(num,Date.now());
-  updAlive();playSound('kill');
-  // Haal bijgewerkte stats op voor lokale toast/log (optimistisch — zie boven)
+  updAlive();playSound('kill');renderRaakPlayerList();
   const updatedTarget=allPlayers().find(p=>p.number===num);
   const tLives=updatedTarget?.lives??0;
   const tAlive=updatedTarget?.alive??false;
-  toast(target.name+' (#'+num+') geraakt'+(tLives>0?' — nog '+tLives+' lev'+(tLives===1?'en':'ens'):' — geëlimineerd')+'!','red');
-  addLog(target.name+' (#'+num+') geraakt door '+G.name+(tAlive?' ('+tLives+' levens over)':' — geëlimineerd'));
-  input.value='';renderPU();
+  toast(target.name+' geraakt'+(tLives>0?' — nog '+tLives+' lev'+(tLives===1?'en':'ens'):' — geëlimineerd')+'!','red');
+  addLog(target.name+' geraakt door '+G.name+(tAlive?' ('+tLives+' levens over)':' — geëlimineerd'));
+  renderPU();
   if(!DEMO_MODE&&db)syncKillToFirebase(target.name,num,CFG.lives);
 }
 
