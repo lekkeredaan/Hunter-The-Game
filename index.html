@@ -950,18 +950,6 @@ select option{background:#18181b}
     </div>
   </div>
 
-  <!-- Selfie sectie -->
-  <div class="surface" style="display:flex;flex-direction:column;gap:.75rem;align-items:center">
-    <div class="subtitle">Referentie-selfie</div>
-    <div class="body-sm" style="text-align:center">Maak een duidelijke selfie van je gezicht. Dit gebruikt het spel als AI-verificatie bij een raak-poging.</div>
-    <div id="selfie-preview" style="display:none;width:140px;height:140px;border-radius:12px;overflow:hidden;border:2px solid var(--rose)">
-      <img id="selfie-img" style="width:100%;height:100%;object-fit:cover" alt="selfie"/>
-    </div>
-    <input type="file" id="selfie-input" accept="image/*" capture="user" style="display:none" onchange="onSelfieChosen(this)"/>
-    <button class="btn btn-ghost" onclick="document.getElementById('selfie-input').click()" id="selfie-btn">📷 Selfie maken</button>
-    <div id="selfie-uploading" style="display:none;font-size:.85rem;color:var(--zinc-400)">Uploaden…</div>
-  </div>
-
   <button class="btn btn-primary" onclick="saveSignalement()" id="sig-save-btn">Opslaan &amp; naar de kaart →</button>
 </div>
 
@@ -1446,42 +1434,21 @@ async function saveSignalement() {
   if (!lengte || !bovenKleur || !bovenType || !onderKleur || !huid) {
     toast('Vul lengte, boven- en onderkledij en huidskleur in', 'red'); return;
   }
-  if (!selfieBase64) {
-    toast('Maak eerst een selfie', 'red'); return;
-  }
-
   const btn = document.getElementById('sig-save-btn');
-  btn.disabled = true; btn.textContent = 'Selfie uploaden…';
-  document.getElementById('selfie-uploading').style.display = 'block';
+  btn.disabled = true; btn.textContent = 'Opslaan…';
 
   try {
-    // Upload selfie naar Vercel Blob
-    const resp = await fetch('/api/upload-photo', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        imageBase64: selfieBase64,
-        lobbyCode: G.lobby,
-        playerNumber: G.playerNumber,
-      }),
-    });
-    if (!resp.ok) throw new Error('Upload mislukt: ' + resp.status);
-    const { url } = await resp.json();
-
-    // Sla signalement + foto-URL op in Firebase
     const sig = { lengte, bovenKleur, bovenType, onderKleur, onderType, hoofd, baard, huid };
     if (!DEMO_MODE && db && lobbyRef) {
       await lobbyRef.child('players/' + G.playerNumber + '/signalement').set(sig);
-      await lobbyRef.child('players/' + G.playerNumber + '/photoUrl').set(url);
     }
-    G.mySig = sig; G.myPhotoUrl = url;
-    selfieBase64 = null; // niet meer nodig in geheugen
+    G.mySig = sig;
+    selfieBase64 = null;
     go('s-game');
   } catch(e) {
     toast('Fout: ' + e.message, 'red');
   } finally {
     btn.disabled = false; btn.textContent = 'Opslaan & naar de kaart →';
-    document.getElementById('selfie-uploading').style.display = 'none';
   }
 }
 
@@ -1598,8 +1565,8 @@ async function checkRaak() {
 async function startAIOverride() {
   const target = allPlayers().find(p => p.number === raakTargetNumber);
   if (!target || !raakShotBase64) return;
-  if (!target.photoUrl) {
-    toast(target.name + ' heeft geen referentie-selfie — override niet mogelijk', 'red');
+  if (!target.signalement) {
+    toast(target.name + ' heeft geen signalement ingevuld — override niet mogelijk', 'red');
     return;
   }
 
@@ -1611,7 +1578,7 @@ async function startAIOverride() {
     const resp = await fetch('/api/verify-hit', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ shotBase64: raakShotBase64, referenceUrl: target.photoUrl }),
+      body: JSON.stringify({ shotBase64: raakShotBase64, signalement: target.signalement }),
     });
     if (!resp.ok) throw new Error('AI-check mislukt: ' + resp.status);
     raakAIResult = await resp.json();
